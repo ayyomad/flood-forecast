@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TidePulse</title>
+
+    <!-- Link to Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='index.css') }}"
+    />
+
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="container">
+        <div class="logo"><span class="logo-icon"></span> TidePulse</div>
+        <ul class="nav-links">
+          <li><a href="#home">Home</a></li>
+          <li><a href="#flood-map">Flood Map</a></li>
+          <li><a href="#reports">Reports</a></li>
+          <li><a href="#safety">Safety</a></li>
+        </ul>
+        <button class="login-btn">Login</button>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <!-- Search Form -->
+        <form id="search-form">
+          <input
+            type="text"
+            id="location"
+            class="search-bar"
+            placeholder="Enter location..."
+            required
+          />
+          <button type="submit" class="btn-primary">Search</button>
+        </form>
+
+        <h1>Real-Time Flood Forecasts, Stay Prepared.</h1>
+        <p class="subheading">
+          AI-powered coastal flood forecasting for real-time risk awareness.
+        </p>
+        <p class="description">
+          Predict, prepare, and protect—our smart forecasting tool helps
+          communities stay safe with real-time flood insights.
+        </p>
+        <div class="hero-buttons">
+          <button class="btn-primary">Forecast</button>
+          <button class="btn-secondary">Community</button>
+        </div>
+
+        <div class="content-container">
+            <!-- Results Section -->
+            <div id="results"></div>
+          
+            <!-- Map Section -->
+            <div id="map"></div>
+          </div>
+    </section>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>
