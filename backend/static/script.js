@@ -69,53 +69,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }).addTo(map);
   
     // Heatmap layer (empty initially)
-    const heatLayer = L.heatLayer([], { radius: 25, blur: 15, maxZoom: 17 }).addTo(map);
+    const heatLayer = L.heatLayer([], { 
+        radius: 25, 
+        blur: 15, 
+        maxZoom: 17 
+    }).addTo(map);
   
     form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const location = document.getElementById("location").value;
+        e.preventDefault();
+        const location = document.getElementById("location").value;
   
-      try {
-        const response = await fetch("/search", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: `location=${location}`,
-        });
+        try {
+            const response = await fetch("/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `location=${location}`,
+            });
   
-        const data = await response.json();
+            const data = await response.json();
   
-        // Display the results dynamically
-        resultsDiv.innerHTML = `
-          <h2>Flood Prediction for ${data.location}</h2>
-          <div class="stat">
-            <span class="stat-label">Rainfall:</span>
-            <span class="stat-value">${data.rainfall}</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">Wind Speed:</span>
-            <span class="stat-value">${data.wind_speed}</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">Topography:</span>
-            <span class="stat-value">${data.topography}</span>
-          </div>
-          <div class="stat">
-            <span class="stat-label">Flood Probability:</span>
-            <span class="stat-value">${data.flood_probability}</span>
-          </div>
-        `;
+            // Display the results dynamically
+            resultsDiv.innerHTML = `
+                <h2>Flood Prediction for ${data.location}</h2>
+                <div class="stat">
+                    <span class="stat-label">Rainfall:</span>
+                    <span class="stat-value">${data.rainfall}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Wind Speed:</span>
+                    <span class="stat-value">${data.wind_speed}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Topography:</span>
+                    <span class="stat-value">${data.topography}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Flood Probability:</span>
+                    <span class="stat-value">${data.flood_probability}</span>
+                </div>
+            `;
   
-        // Update the map with the location's coordinates
-        const { lat, lon } = data.coordinates;
-        map.setView([lat, lon], 10); // Zoom to the location
+            // Update the map with the location's coordinates
+            const { lat, lon } = data.coordinates;
+            map.setView([lat, lon], 10); // Zoom to the location
   
-        // Add a heatmap point (latitude, longitude, intensity)
-        const intensity = data.flood_probability === "High" ? 1 : 0.5;
-        heatLayer.setLatLngs([[lat, lon, intensity]]);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        resultsDiv.innerHTML = `<p style="color: red;">Failed to fetch data. Please try again.</p>`;
-      }
+            // Add a heatmap point (latitude, longitude, intensity)
+            const intensity = data.flood_probability === "High" ? 1 : 0.5;
+            heatLayer.setLatLngs([[lat, lon, intensity]]);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            resultsDiv.innerHTML = `<p style="color: red;">Failed to fetch data. Please try again.</p>`;
+        }
     });
 });
 
@@ -123,6 +127,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchForm = document.getElementById('search-form');
     const locationInput = document.getElementById('location');
     const forecastBtn = document.getElementById('forecast-btn');
+
+    // Handle form submission
+    searchForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const location = locationInput.value;
+        
+        if (!location) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/forecast?location=${encodeURIComponent(location)}`);
+            const data = await response.json();
+            
+            // Navigate to flood map section
+            navigateToSection('flood-map');
+            
+            // Update map with forecast data
+            updateMapWithForecast(data);
+        } catch (error) {
+            console.error('Error fetching forecast:', error);
+        }
+    });
 
     // Handle forecast button click
     forecastBtn.addEventListener('click', async (e) => {
