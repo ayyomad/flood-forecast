@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TidePulse - Community</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='index.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+  </head>
+  <body>
+    <!-- Include navbar from index.html -->
+    {% include 'navbar.html' %}
+
+    <div class="community-container">
+      <div class="community-sidebar">
+        <div class="community-stats">
+          <div class="stat-item">
+            <i class="fas fa-users"></i>
+            <span class="stat-count">2.5K</span>
+            <span class="stat-label">Members</span>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-message"></i>
+            <span class="stat-count">150</span>
+            <span class="stat-label">Posts Today</span>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+          <button class="action-btn" id="emergency-btn">
+            <i class="fas fa-exclamation-triangle"></i> Report Emergency
+          </button>
+          <button class="action-btn" id="volunteer-btn">
+            <i class="fas fa-hands-helping"></i> Volunteer
+          </button>
+        </div>
+
+        <div class="resources">
+          <h3><i class="fas fa-book"></i> Safety Resources</h3>
+          <div class="resource-links">
+            <a href="#" class="resource-link">
+              <i class="fas fa-shield-alt"></i>
+              <span>Flood Safety Guide</span>
+            </a>
+            <a href="#" class="resource-link">
+              <i class="fas fa-phone-alt"></i>
+              <span>Emergency Contacts</span>
+            </a>
+            <a href="#" class="resource-link">
+              <i class="fas fa-clipboard-list"></i>
+              <span>Preparedness Checklist</span>
+            </a>
+            <a href="#" class="resource-link">
+              <i class="fas fa-map-marked-alt"></i>
+              <span>Evacuation Routes</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="community-main">
+        <div class="post-filters">
+          <button class="filter-btn active" data-filter="all">All Posts</button>
+          <button class="filter-btn" data-filter="emergency">
+            Emergencies
+          </button>
+          <button class="filter-btn" data-filter="updates">Updates</button>
+          <button class="filter-btn" data-filter="help">Help Needed</button>
+        </div>
+
+        <form id="post-form" class="post-form">
+          <div class="form-header">
+            <img
+              src="{{ url_for('static', filename='images/default-avatar.png') }}"
+              alt="User"
+              class="user-avatar"
+            />
+            <input
+              type="text"
+              name="title"
+              placeholder="What's happening in your area?"
+              required
+            />
+          </div>
+          <div class="form-body">
+            <textarea
+              name="description"
+              placeholder="Share more details..."
+              required
+            ></textarea>
+            <div class="form-row">
+              <div class="input-group">
+                <i class="fas fa-map-marker-alt"></i>
+                <input
+                  type="text"
+                  name="location"
+                  placeholder="Location"
+                  required
+                />
+              </div>
+              <div class="input-group">
+                <i class="fas fa-exclamation-circle"></i>
+                <select name="urgency" required>
+                  <option value="low">Low Priority</option>
+                  <option value="medium">Medium Priority</option>
+                  <option value="high">High Priority</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-footer">
+              <div class="attach-options">
+                <button type="button" class="attach-btn">
+                  <i class="fas fa-camera"></i>
+                </button>
+                <button type="button" class="attach-btn">
+                  <i class="fas fa-map"></i>
+                </button>
+              </div>
+              <button type="submit" class="submit-btn">
+                <i class="fas fa-paper-plane"></i> Post Update
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div id="posts" class="posts-container">
+          <!-- Posts will be dynamically added here -->
+        </div>
+      </div>
+
+      <div class="community-aside">
+        <div class="trending-topics">
+          <h3><i class="fas fa-chart-line"></i> Trending</h3>
+          <div class="topic-list">
+            <!-- Trending topics will be added here -->
+          </div>
+        </div>
+
+        <div class="active-volunteers">
+          <h3><i class="fas fa-user-shield"></i> Active Volunteers</h3>
+          <div class="volunteer-list">
+            <!-- Active volunteers will be added here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='community.js') }}"></script>
+  </body>
+</html>

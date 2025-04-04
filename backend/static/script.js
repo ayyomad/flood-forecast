@@ -1,3 +1,63 @@
+// Check authentication state when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuthState();
+    setupProfileMenu();
+});
+
+function checkAuthState() {
+    // Check if user is logged in (you can store this in localStorage after login)
+    const user = JSON.parse(localStorage.getItem('user'));
+    const loginBtn = document.getElementById('login-btn');
+    const profileMenu = document.getElementById('profile-menu');
+    
+    if (user) {
+        loginBtn.classList.add('hidden');
+        profileMenu.classList.remove('hidden');
+        document.getElementById('username').textContent = user.username;
+    } else {
+        loginBtn.classList.remove('hidden');
+        profileMenu.classList.add('hidden');
+    }
+}
+
+function setupProfileMenu() {
+    const profileIcon = document.querySelector('.profile-icon');
+    const dropdownMenu = document.querySelector('.dropdown-menu');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    // Toggle dropdown menu
+    profileIcon?.addEventListener('click', () => {
+        dropdownMenu.classList.toggle('show');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!profileIcon?.contains(e.target)) {
+            dropdownMenu.classList.remove('show');
+        }
+    });
+
+    // Handle logout
+    logoutBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        logout();
+    });
+}
+
+function logout() {
+    // Clear user data
+    localStorage.removeItem('user');
+    
+    // Make logout request to server
+    fetch('/logout', {
+        method: 'POST',
+        credentials: 'include'
+    }).then(() => {
+        // Redirect to home page
+        window.location.href = '/';
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("search-form");
     const resultsDiv = document.getElementById("results");
@@ -57,4 +117,44 @@ document.addEventListener("DOMContentLoaded", () => {
         resultsDiv.innerHTML = `<p style="color: red;">Failed to fetch data. Please try again.</p>`;
       }
     });
-  });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const searchForm = document.getElementById('search-form');
+    const locationInput = document.getElementById('location');
+    const forecastBtn = document.getElementById('forecast-btn');
+
+    // Handle forecast button click
+    forecastBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        
+        // Get location value
+        const location = locationInput.value;
+        
+        if (!location) {
+            alert('Please enter a location');
+            return;
+        }
+
+        try {
+            // Make API call with location
+            const response = await fetch(`/api/forecast?location=${encodeURIComponent(location)}`);
+            const data = await response.json();
+
+            // Navigate to flood map section
+            navigateToSection('flood-map');
+
+            // Update map with forecast data
+            updateMapWithForecast(data);
+            
+        } catch (error) {
+            console.error('Error fetching forecast:', error);
+            alert('Error fetching forecast data. Please try again.');
+        }
+    });
+
+    // Prevent form submission
+    searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+    });
+});

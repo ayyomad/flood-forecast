@@ -22,60 +22,133 @@
     />
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
   </head>
   <body>
     <!-- Navbar -->
     <nav class="navbar">
       <div class="container">
-        <div class="logo"><span class="logo-icon"></span> TidePulse</div>
+        <div class="logo">
+          <i class="fas fa-water logo-icon"></i>
+          <span>TidePulse</span>
+        </div>
         <ul class="nav-links">
-          <li><a href="#home">Home</a></li>
-          <li><a href="#flood-map">Flood Map</a></li>
-          <li><a href="#reports">Reports</a></li>
-          <li><a href="#safety">Safety</a></li>
+          <li>
+            <a href="#home" class="nav-link active" data-section="home">Home</a>
+          </li>
+          <li>
+            <a href="#community" class="nav-link" data-section="community"
+              >Community</a
+            >
+          </li>
+          <li>
+            <a href="#flood-map" class="nav-link" data-section="flood-map"
+              >Flood Map</a
+            >
+          </li>
+          <li>
+            <a href="#safety" class="nav-link" data-section="safety">Safety</a>
+          </li>
         </ul>
-        <button class="login-btn">Login</button>
+        <div class="auth-section">
+          <a href="/auth" class="login-btn" id="login-btn">Login</a>
+          <div class="profile-menu hidden" id="profile-menu">
+            <div class="profile-trigger">
+              <i class="fas fa-user profile-icon"></i>
+              <span class="username" id="username"></span>
+            </div>
+            <div class="dropdown-menu" id="dropdown-menu">
+              <a href="#" id="profile-btn">Profile</a>
+              <a href="#" id="logout-btn">Logout</a>
+            </div>
+          </div>
+        </div>
       </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-      <div class="container">
-        <!-- Search Form -->
-        <form id="search-form">
-          <input
-            type="text"
-            id="location"
-            class="search-bar"
-            placeholder="Enter location..."
-            required
-          />
-          <button type="submit" class="btn-primary">Search</button>
-        </form>
+    <!-- Main Content Container -->
+    <main id="main-content">
+      <!-- Home Section -->
+      <section id="home" class="section active">
+        <div class="hero">
+          <div class="container">
+            <!-- Search Form -->
+            <form id="search-form">
+              <input
+                type="text"
+                id="location"
+                class="search-bar"
+                placeholder="Enter location..."
+                required
+              />
+            </form>
 
-        <h1>Real-Time Flood Forecasts, Stay Prepared.</h1>
-        <p class="subheading">
-          AI-powered coastal flood forecasting for real-time risk awareness.
-        </p>
-        <p class="description">
-          Predict, prepare, and protect—our smart forecasting tool helps
-          communities stay safe with real-time flood insights.
-        </p>
-        <div class="hero-buttons">
-          <button class="btn-primary">Forecast</button>
-          <button class="btn-secondary">Community</button>
-        </div>
+            <!-- Hero Content -->
+            <h1>
+              Real-Time Flood Forecast,
+              <span>Stay Prepared.</span>
+            </h1>
+            <p class="subheading">
+              AI-powered coastal flood forecasting for real-time risk awareness.
+            </p>
+            <p class="description">
+              Predict, prepare, and protect—our smart forecasting tool helps
+              communities stay safe with real-time flood insights.
+            </p>
 
-        <div class="content-container">
-            <!-- Results Section -->
-            <div id="results"></div>
-          
-            <!-- Map Section -->
-            <div id="map"></div>
+            <!-- Action Buttons -->
+            <div class="hero-buttons">
+              <button
+                class="btn-primary"
+                id="forecast-btn"
+                data-section="flood-map"
+              >
+                Forecast
+              </button>
+              <button class="btn-secondary" data-section="community">
+                Community
+              </button>
+            </div>
+
+            <!-- Results Container -->
+            <div class="content-container">
+              <div id="results"></div>
+              <div id="map"></div>
+            </div>
           </div>
-    </section>
+        </div>
+      </section>
+
+      <!-- Community Section -->
+      <section id="community" class="section">
+        <div class="community-container">
+          <!-- Community content will be loaded dynamically -->
+        </div>
+      </section>
+
+      <!-- Flood Map Section -->
+      <section id="flood-map" class="section">
+        <div class="map-container">
+          <div id="flood-map-view"></div>
+        </div>
+      </section>
+
+      <!-- Safety Section -->
+      <section id="safety" class="section">
+        <div class="safety-container">
+          <!-- Safety content will be loaded dynamically -->
+        </div>
+      </section>
+    </main>
 
     <!-- JavaScript -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='community.js') }}"></script>
+    <script src="{{ url_for('static', filename='profile.js') }}"></script>
   </body>
 </html>
