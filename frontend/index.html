@@ -1,18 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TidePulse</title>
+    <title>TidePulse | Real-Time Flood Forecasting</title>
 
-    <!-- Link to Google Fonts -->
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: "#eef8ff",
+                100: "#d9edff",
+                200: "#bce0ff",
+                300: "#8acbff",
+                400: "#51adff",
+                500: "#2a8cff",
+                600: "#1670f5",
+                700: "#1259e3",
+                800: "#1748b8",
+                900: "#19408f",
+              },
+              secondary: {
+                500: "#64748b",
+                600: "#475569",
+              },
+              danger: "#ef4444",
+              warning: "#f59e0b",
+              success: "#10b981",
+              lightblue: "#F0F8FF",
+            },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              display: ["Urbanist", "sans-serif"],
+            },
+            boxShadow: {
+              custom: "0 4px 20px rgba(0, 0, 0, 0.08)",
+              hover: "0 10px 25px rgba(0, 0, 0, 0.12)",
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Google Fonts -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Urbanist:wght@500;600;700&display=swap"
       rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='index.css') }}"
     />
 
     <!-- Leaflet CSS -->
@@ -20,6 +57,15 @@
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
     />
+
+    <!-- Mapbox GL JS -->
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+
+    <!-- Leaflet Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
@@ -28,128 +74,757 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
+
+    <!-- Custom styles -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='index.css') }}"
+    />
+
+    <style>
+      /* Section visibility control */
+      .section {
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+
+      .section.active {
+        display: block;
+        opacity: 1;
+      }
+
+      /* Leaflet map container */
+      .leaflet-container {
+        width: 100%;
+        height: 100%;
+        min-height: 400px;
+        z-index: 10;
+      }
+
+      /* Dropdown menu behavior */
+      .dropdown-menu {
+        visibility: hidden;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: visibility 0s linear 0.2s, opacity 0.2s, transform 0.2s;
+        z-index: 50;
+      }
+
+      .dropdown-menu.active {
+        visibility: visible;
+        opacity: 1;
+        transform: translateY(0);
+        transition-delay: 0s;
+      }
+
+      /* Prevent content jump when switching sections */
+      #main-content {
+        min-height: calc(100vh - 64px);
+      }
+
+      /* Leaflet specific styles */
+      #map,
+      #flood-map-view {
+        height: 500px;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        z-index: 10;
+        min-height: 400px;
+      }
+
+      @media (min-width: 768px) {
+        #flood-map-view {
+          height: 70vh;
+        }
+      }
+
+      /* Fix z-index issues */
+      .leaflet-container {
+        z-index: 10;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
   </head>
-  <body>
+  <body class="font-sans bg-lightblue text-gray-900">
     <!-- Navbar -->
-    <nav class="navbar">
-      <div class="container">
-        <div class="logo">
-          <i class="fas fa-water logo-icon"></i>
-          <span>TidePulse</span>
+    <nav
+      class="fixed w-full top-0 left-0 z-50 flex items-center justify-between py-4 px-6"
+    >
+      <!-- Logo - left corner -->
+      <a href="/" class="flex items-center gap-2">
+        <div
+          class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white shadow-sm"
+        >
+          <i class="fas fa-water text-lg"></i>
         </div>
-        <ul class="nav-links">
-          <li>
-            <a href="#home" class="nav-link active" data-section="home">Home</a>
-          </li>
-          <li>
-            <a href="#community" class="nav-link" data-section="community"
-              >Community</a
-            >
-          </li>
-          <li>
-            <a href="#flood-map" class="nav-link" data-section="flood-map"
-              >Flood Map</a
-            >
-          </li>
-          <li>
-            <a href="#safety" class="nav-link" data-section="safety">Safety</a>
-          </li>
-        </ul>
-        <div class="auth-section">
-          <a href="/auth" class="login-btn" id="login-btn">Login</a>
-          <div class="profile-menu hidden" id="profile-menu">
-            <div class="profile-trigger">
-              <i class="fas fa-user profile-icon"></i>
-              <span class="username" id="username"></span>
+        <span class="text-xl font-display font-semibold text-primary-600"
+          >TidePulse</span
+        >
+      </a>
+
+      <!-- Navigation bar - centered with minimal width -->
+      <div
+        class="bg-white/90 backdrop-blur-lg rounded-full shadow-sm px-8 py-2.5"
+      >
+        <div class="flex items-center space-x-12">
+          <a href="#home" class="nav-link text-primary-600 font-medium text-sm"
+            >Home</a
+          >
+          <a
+            href="/community"
+            class="nav-link text-gray-700 hover:text-primary-600 text-sm"
+            >Community</a
+          >
+          <a
+            href="#flood-map"
+            class="nav-link text-gray-700 hover:text-primary-600 text-sm"
+            >Flood map</a
+          >
+          <a
+            href="#resources"
+            class="nav-link text-gray-700 hover:text-primary-600 text-sm"
+            >Safety</a
+          >
+        </div>
+      </div>
+
+      <!-- Login button - right corner -->
+      <a href="/auth" class="auth-btn flex items-center">
+        <div
+          class="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200 shadow-sm"
+        >
+          <i class="fas fa-user text-gray-700"></i>
+        </div>
+      </a>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-24 overflow-hidden">
+      <!-- Home Section -->
+      <section id="home" class="section active min-h-screen">
+        <!-- Hero Section -->
+        <div class="bg-gradient-to-b from-lightblue to-white py-16 md:py-24">
+          <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
+            <div class="text-center mb-16">
+              <h1
+                class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6"
+              >
+                <span class="relative inline-block">
+                  <span class="relative z-10">Real-time Flood</span>
+                  <span
+                    class="absolute bottom-1 left-0 w-full h-3 bg-primary/20 -z-10 transform -rotate-1"
+                  ></span>
+                </span>
+                <span class="text-primary block mt-2"
+                  >Forecasting & Monitoring</span
+                >
+              </h1>
+              <p
+                class="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-8"
+              >
+                Get accurate predictions and real-time alerts for flood risks in
+                your area. Stay informed, stay prepared, stay safe.
+              </p>
+
+              <!-- Search Form -->
+              <form id="search-form" class="max-w-md mx-auto relative">
+                <div class="relative flex items-center">
+                  <input
+                    type="text"
+                    id="location"
+                    placeholder="Enter your location..."
+                    class="w-full py-3 pl-12 pr-32 rounded-full border-none bg-white/70 backdrop-blur-sm text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                  />
+                  <div class="absolute left-4 text-primary">
+                    <i class="fas fa-search"></i>
+                  </div>
+                  <button
+                    type="submit"
+                    class="absolute right-2 bg-primary hover:bg-primary/90 text-white py-2 px-4 rounded-full text-sm font-medium transition-all"
+                  >
+                    Search
+                  </button>
+                </div>
+              </form>
+
+              <!-- Action Buttons -->
+              <div
+                class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8"
+              >
+                <button
+                  id="forecast-btn"
+                  class="px-6 py-3 bg-[#007BFF] hover:bg-[#007BFF]/90 text-white rounded-full shadow-sm hover:shadow transition-all flex items-center gap-2 text-sm font-medium"
+                >
+                  <i class="fas fa-map-marked-alt"></i>
+                  View Flood Map
+                </button>
+                <a
+                  href="/community"
+                  class="px-6 py-3 bg-white hover:bg-white/80 text-primary border border-primary/20 rounded-full shadow-sm hover:shadow transition-all flex items-center gap-2 text-sm font-medium"
+                >
+                  <i class="fas fa-users"></i>
+                  Join Community
+                </a>
+              </div>
             </div>
-            <div class="dropdown-menu" id="dropdown-menu">
-              <a href="#" id="profile-btn">Profile</a>
-              <a href="#" id="logout-btn">Logout</a>
+
+            <!-- Dynamic Content Container -->
+            <div class="mt-6">
+              <!-- Results Container -->
+              <div
+                class="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm w-full max-w-3xl mx-auto mb-8 hidden"
+                id="results"
+              >
+                <div class="text-center py-12">
+                  <div
+                    class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4"
+                  >
+                    <i class="fas fa-search text-2xl text-primary"></i>
+                  </div>
+                  <h3 class="text-xl font-medium text-gray-800 mb-2">
+                    Search for a location
+                  </h3>
+                  <p class="text-gray-600">
+                    Enter a location above to see flood predictions
+                  </p>
+                </div>
+              </div>
+
+              <!-- Main Display Container -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="md:col-span-2">
+                  <div
+                    class="relative h-96 md:h-[400px] rounded-2xl overflow-hidden shadow-sm border border-white/20"
+                  >
+                    <div id="map" class="h-full w-full"></div>
+                    <div class="absolute bottom-4 right-4 z-20">
+                      <div
+                        class="bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-gray-600 shadow-sm"
+                      >
+                        <i class="fas fa-info-circle mr-1 text-primary"></i>
+                        Showing flood risk areas
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div
+                    class="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm h-full flex flex-col justify-center"
+                  >
+                    <h3
+                      class="text-xl font-medium text-gray-800 mb-6 text-center"
+                    >
+                      Real-time Data
+                    </h3>
+                    <div class="space-y-4">
+                      <div
+                        class="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl"
+                      >
+                        <span class="text-sm font-medium text-gray-700"
+                          >Weather Updates</span
+                        >
+                        <span class="text-sm text-blue-600"
+                          ><i class="fas fa-cloud-rain mr-1"></i>
+                          Real-time</span
+                        >
+                      </div>
+                      <div
+                        class="flex justify-between items-center p-3 bg-green-50/50 rounded-xl"
+                      >
+                        <span class="text-sm font-medium text-gray-700"
+                          >Monitoring Stations</span
+                        >
+                        <span class="text-sm text-green-600"
+                          ><i class="fas fa-check-circle mr-1"></i> 24/7</span
+                        >
+                      </div>
+                      <div
+                        class="flex justify-between items-center p-3 bg-amber-50/50 rounded-xl"
+                      >
+                        <span class="text-sm font-medium text-gray-700"
+                          >Flood Alerts</span
+                        >
+                        <span class="text-sm text-amber-600"
+                          ><i class="fas fa-bell mr-1"></i> Instant</span
+                        >
+                      </div>
+                    </div>
+                    <div class="mt-6 text-center">
+                      <p class="text-sm text-gray-600">
+                        Our system processes data from multiple sources to
+                        provide the most accurate flood predictions.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- The rest of the sections will be added in the next update -->
+    </main>
+
+    <!-- Flood Map Section -->
+    <section id="flood-map" class="section py-10 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-display font-bold text-gray-900">
+            Interactive Flood Map
+          </h2>
+          <p class="mt-2 text-lg text-gray-600 max-w-2xl mx-auto">
+            Explore potential flood risk areas with our interactive heatmap
+            visualization
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <!-- Main Map Column -->
+          <div class="lg:col-span-3">
+            <!-- Map Controls -->
+            <div
+              class="bg-white rounded-lg shadow-custom p-3 mb-4 flex flex-wrap gap-3 items-center"
+            >
+              <div class="w-full sm:w-auto flex-grow">
+                <div class="relative">
+                  <input
+                    type="text"
+                    id="map-search-input"
+                    placeholder="Search location..."
+                    class="w-full pl-10 pr-12 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/50 focus:outline-none"
+                  />
+                  <div class="absolute left-3 top-2.5 text-gray-400">
+                    <i class="fas fa-search"></i>
+                  </div>
+                  <button
+                    id="map-search-btn"
+                    class="absolute right-2 top-1.5 bg-primary text-white p-1.5 rounded-md hover:bg-primary/90 transition-colors"
+                  >
+                    <i class="fas fa-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                <select
+                  id="map-timeframe"
+                  class="bg-white border border-gray-200 text-sm rounded-lg px-3 py-2.5 focus:ring-primary/50 focus:border-primary"
+                >
+                  <option value="current">Current</option>
+                  <option value="24h">Last 24h</option>
+                  <option value="7d">Last 7 days</option>
+                </select>
+
+                <select
+                  id="map-display-mode"
+                  class="bg-white border border-gray-200 text-sm rounded-lg px-3 py-2.5 focus:ring-primary/50 focus:border-primary"
+                >
+                  <option value="risk">Risk Heatmap</option>
+                  <option value="rainfall">Rainfall</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Map Container -->
+            <div
+              id="flood-map-view"
+              class="w-full h-[600px] rounded-xl shadow-custom overflow-hidden border border-gray-100 relative"
+            >
+              <!-- Map Loading Indicator -->
+              <div
+                id="map-loading"
+                class="absolute inset-0 bg-white bg-opacity-80 z-20 hidden flex items-center justify-center"
+              >
+                <div class="text-center">
+                  <div
+                    class="w-12 h-12 border-t-4 border-b-4 border-primary rounded-full animate-spin mx-auto"
+                  ></div>
+                  <p class="mt-3 text-primary font-medium">
+                    Loading map data...
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Map Layer Toggles -->
+            <div class="flex flex-wrap gap-2 mt-4">
+              <button
+                data-layer="terrain"
+                class="map-layer-toggle py-1.5 px-3 text-sm bg-primary text-white rounded-lg active"
+              >
+                <i class="fas fa-mountain mr-1"></i> Terrain
+              </button>
+              <button
+                data-layer="satellite"
+                class="map-layer-toggle py-1.5 px-3 text-sm bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                <i class="fas fa-satellite mr-1"></i> Satellite
+              </button>
+              <button
+                data-layer="elevation"
+                class="map-layer-toggle py-1.5 px-3 text-sm bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                <i class="fas fa-layer-group mr-1"></i> Elevation
+              </button>
+            </div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="lg:col-span-1">
+            <!-- Risk Legend -->
+            <div
+              class="bg-white rounded-lg shadow-custom p-4 mb-4 border border-gray-100"
+            >
+              <h3 class="font-medium text-gray-900 mb-3 flex items-center">
+                <i class="fas fa-info-circle text-primary mr-2"></i> Risk Legend
+              </h3>
+              <div class="space-y-2">
+                <div class="flex items-center">
+                  <div class="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+                  <span class="text-sm">High Risk</span>
+                </div>
+                <div class="flex items-center">
+                  <div class="w-4 h-4 rounded-full bg-orange-400 mr-2"></div>
+                  <span class="text-sm">Medium Risk</span>
+                </div>
+                <div class="flex items-center">
+                  <div class="w-4 h-4 rounded-full bg-yellow-300 mr-2"></div>
+                  <span class="text-sm">Low Risk</span>
+                </div>
+                <div class="flex items-center">
+                  <div class="w-4 h-4 rounded-full bg-green-400 mr-2"></div>
+                  <span class="text-sm">Very Low Risk</span>
+                </div>
+              </div>
+              <div class="mt-3 pt-3 border-t border-gray-100">
+                <p class="text-xs text-gray-500">
+                  The heatmap shows potential flood risk areas based on
+                  rainfall, elevation, and historical data.
+                </p>
+              </div>
+            </div>
+
+            <!-- Current Conditions -->
+            <div
+              id="current-conditions"
+              class="bg-white rounded-lg shadow-custom p-4 mb-4 border border-gray-100"
+            >
+              <h3 class="font-medium text-gray-900 mb-3 flex items-center">
+                <i class="fas fa-cloud-sun text-primary mr-2"></i> Current
+                Conditions
+              </h3>
+              <div class="text-center py-6 text-gray-500">
+                <div
+                  class="w-12 h-12 mx-auto mb-2 flex items-center justify-center rounded-full bg-gray-50"
+                >
+                  <i class="fas fa-map-marker-alt text-lg text-gray-400"></i>
+                </div>
+                <p>Select a location to view conditions</p>
+              </div>
+            </div>
+
+            <!-- Forecast Panel -->
+            <div
+              class="bg-white rounded-lg shadow-custom border border-gray-100 overflow-hidden"
+            >
+              <div class="bg-primary text-white px-4 py-2 text-center">
+                <h3 class="font-medium text-sm">5-Day Forecast</h3>
+              </div>
+              <div id="forecast-panel" class="p-4">
+                <div class="text-center py-6 text-gray-500">
+                  <div
+                    class="w-12 h-12 mx-auto mb-2 flex items-center justify-center rounded-full bg-gray-50"
+                  >
+                    <i class="fas fa-calendar-alt text-lg text-gray-400"></i>
+                  </div>
+                  <p>Select a location to view forecast</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </nav>
+    </section>
 
-    <!-- Main Content Container -->
-    <main id="main-content">
-      <!-- Home Section -->
-      <section id="home" class="section active">
-        <div class="hero">
-          <div class="container">
-            <!-- Search Form -->
-            <form id="search-form">
-              <input
-                type="text"
-                id="location"
-                class="search-bar"
-                placeholder="Enter location..."
-                required
-              />
-              <button type="submit" class="visually-hidden">Search</button>
-            </form>
+    <!-- Resources Section -->
+    <section id="resources" class="section py-16 bg-gray-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-display font-bold text-gray-900">
+            Flood Safety Resources
+          </h2>
+          <p class="mt-2 text-lg text-gray-600 max-w-2xl mx-auto">
+            Essential information to keep you and your family safe before,
+            during, and after floods
+          </p>
+        </div>
 
-            <!-- Hero Content -->
-            <h1>
-              Real-Time Flood Forecast,
-              <span>Stay Prepared.</span>
-            </h1>
-            <p class="subheading">
-              AI-powered coastal flood forecasting for real-time risk awareness.
-            </p>
-            <p class="description">
-              Predict, prepare, and protect—our smart forecasting tool helps
-              communities stay safe with real-time flood insights.
-            </p>
-
-            <!-- Action Buttons -->
-            <div class="hero-buttons">
-              <button
-                class="btn-primary"
-                id="forecast-btn"
-                data-section="flood-map"
-              >
-                Forecast
-              </button>
-              <button class="btn-secondary" data-section="community">
-                Community
-              </button>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Before Flood -->
+          <div
+            class="bg-white rounded-xl shadow-custom p-6 border border-gray-100"
+          >
+            <div
+              class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-4"
+            >
+              <i class="fas fa-shield-alt text-primary"></i>
             </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-3">
+              Before a Flood
+            </h3>
+            <ul class="space-y-2 text-gray-600">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Create an emergency plan for your household</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Prepare an emergency kit with essential supplies</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Know your area's flood risk and evacuation routes</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Keep important documents in a waterproof container</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Install check valves in plumbing to prevent backups</span>
+              </li>
+            </ul>
+          </div>
 
-            <!-- Results Container -->
-            <div class="content-container">
-              <div id="results"></div>
-              <div id="map"></div>
+          <!-- During Flood -->
+          <div
+            class="bg-white rounded-xl shadow-custom p-6 border border-gray-100"
+          >
+            <div
+              class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mb-4"
+            >
+              <i class="fas fa-exclamation-triangle text-warning"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-3">
+              During a Flood
+            </h3>
+            <ul class="space-y-2 text-gray-600">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span
+                  >Stay informed with weather alerts and official
+                  instructions</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Evacuate immediately if advised by authorities</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Avoid walking or driving through flood waters</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Move to higher ground away from rivers and streams</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Disconnect electrical appliances if safe to do so</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- After Flood -->
+          <div
+            class="bg-white rounded-xl shadow-custom p-6 border border-gray-100"
+          >
+            <div
+              class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4"
+            >
+              <i class="fas fa-home text-success"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-3">
+              After a Flood
+            </h3>
+            <ul class="space-y-2 text-gray-600">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Return home only when authorities say it's safe</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Document damage with photos for insurance claims</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span>Clean and disinfect everything that got wet</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span
+                  >Check for structural damage before entering buildings</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-500 mt-1 mr-2"></i>
+                <span
+                  >Avoid electrical equipment if wet or standing in water</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div class="md:col-span-1">
+            <div class="flex items-center gap-2 mb-4">
+              <div
+                class="bg-gradient-to-r from-primary to-secondary w-10 h-10 rounded-lg flex items-center justify-center text-white"
+              >
+                <i class="fas fa-water text-lg"></i>
+              </div>
+              <span class="text-xl font-display font-bold text-white"
+                >TidePulse</span
+              >
+            </div>
+            <p class="text-gray-400 text-sm">
+              Real-time flood forecasting and community safety platform
+            </p>
+          </div>
+
+          <div>
+            <h4 class="text-sm font-bold uppercase tracking-wider mb-4">
+              Quick Links
+            </h4>
+            <ul class="space-y-2">
+              <li>
+                <a
+                  href="#home"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  >Home</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#flood-map"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  >Flood Maps</a
+                >
+              </li>
+              <li>
+                <a
+                  href="/community"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  >Community</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#resources"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  >Resources</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="text-sm font-bold uppercase tracking-wider mb-4">
+              Resources
+            </h4>
+            <ul class="space-y-2">
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  >Safety Guide</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  >Emergency Contacts</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  >API Documentation</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  >Data Sources</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="text-sm font-bold uppercase tracking-wider mb-4">
+              Connect
+            </h4>
+            <div class="flex space-x-4">
+              <a
+                href="#"
+                class="text-gray-400 hover:text-white transition-colors"
+              >
+                <i class="fab fa-twitter text-lg"></i>
+              </a>
+              <a
+                href="#"
+                class="text-gray-400 hover:text-white transition-colors"
+              >
+                <i class="fab fa-facebook text-lg"></i>
+              </a>
+              <a
+                href="#"
+                class="text-gray-400 hover:text-white transition-colors"
+              >
+                <i class="fab fa-github text-lg"></i>
+              </a>
+              <a
+                href="#"
+                class="text-gray-400 hover:text-white transition-colors"
+              >
+                <i class="fab fa-linkedin text-lg"></i>
+              </a>
             </div>
           </div>
         </div>
-      </section>
 
-      <!-- Community Section -->
-      <section id="community" class="section">
-        <div class="community-container">
-          <!-- Community content will be loaded dynamically -->
+        <div
+          class="mt-8 pt-6 border-t border-gray-700 text-sm text-gray-400 flex flex-col md:flex-row justify-between items-center"
+        >
+          <p>&copy; 2023 TidePulse. All rights reserved.</p>
+          <div class="flex space-x-6 mt-4 md:mt-0">
+            <a href="#" class="hover:text-white transition-colors"
+              >Privacy Policy</a
+            >
+            <a href="#" class="hover:text-white transition-colors"
+              >Terms of Service</a
+            >
+          </div>
         </div>
-      </section>
+      </div>
+    </footer>
 
-      <!-- Flood Map Section -->
-      <section id="flood-map" class="section">
-        <div class="map-container">
-          <div id="flood-map-view"></div>
-        </div>
-      </section>
-
-      <!-- Safety Section -->
-      <section id="safety" class="section">
-        <div class="safety-container">
-          <!-- Safety content will be loaded dynamically -->
-        </div>
-      </section>
-    </main>
-
-    <!-- JavaScript -->
+    <!-- Scripts -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-    <script src="{{ url_for('static', filename='community.js') }}"></script>
-    <script src="{{ url_for('static', filename='profile.js') }}"></script>
   </body>
 </html>

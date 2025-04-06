@@ -1,0 +1,189 @@
+/* Community Page Specific Styles */
+
+/* Animation for upvotes */
+.upvote-btn.active {
+  color: var(--primary-600);
+  animation: pulse 0.3s;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Post form transitions */
+#post-form {
+  transition: all 0.3s ease;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+
+#post-form.visible {
+  max-height: 800px;
+  opacity: 1;
+  margin-bottom: 1.5rem;
+}
+
+/* Post hover effects */
+.posts-container > div {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.posts-container > div:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Category indicators */
+.border-danger {
+  border-left-color: #ef4444;
+}
+
+.border-warning {
+  border-left-color: #f59e0b;
+}
+
+.border-success {
+  border-left-color: #10b981;
+}
+
+.border-primary-500 {
+  border-left-color: #2a8cff;
+}
+
+/* Urgency badges */
+.bg-red-100 {
+  background-color: #fee2e2;
+}
+
+.text-danger {
+  color: #ef4444;
+}
+
+.bg-yellow-100 {
+  background-color: #fef3c7;
+}
+
+.text-yellow-800 {
+  color: #92400e;
+}
+
+.bg-blue-100 {
+  background-color: #dbeafe;
+}
+
+.text-primary-800 {
+  color: #1748b8;
+}
+
+.bg-green-100 {
+  background-color: #d1fae5;
+}
+
+.text-green-800 {
+  color: #065f46;
+}
+
+/* Notifications */
+.notification {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 50;
+  transform: translateY(0);
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.notification.hidden {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+/* Form styling */
+textarea:focus, input:focus, select:focus {
+  outline: none;
+  border-color: #2a8cff;
+  box-shadow: 0 0 0 3px rgba(42, 140, 255, 0.1);
+}
+
+.file-upload-area {
+  border: 2px dashed #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.file-upload-area:hover {
+  border-color: #2a8cff;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .posts-container > div {
+    margin-bottom: 1rem;
+  }
+  
+  .post-form .form-body {
+    padding: 1rem;
+  }
+  
+  .post-form .form-header {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+  
+  .bg-white {
+    background-color: #111827;
+  }
+  
+  .text-gray-900 {
+    color: #f9fafb;
+  }
+  
+  .text-gray-700 {
+    color: #d1d5db;
+  }
+  
+  .text-gray-600 {
+    color: #9ca3af;
+  }
+  
+  .text-gray-500 {
+    color: #6b7280;
+  }
+  
+  .border-gray-200 {
+    border-color: #374151;
+  }
+  
+  .border-gray-100 {
+    border-color: #374151;
+  }
+  
+  .bg-gray-50 {
+    background-color: #18212f;
+  }
+  
+  .hover\:bg-gray-50:hover {
+    background-color: #1f2937;
+  }
+} 
