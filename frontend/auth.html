@@ -3,56 +3,375 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TidePulse - Authentication</title>
+    <title>TidePulse | Login</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: "#eef8ff",
+                100: "#d9edff",
+                200: "#bce0ff",
+                300: "#8acbff",
+                400: "#51adff",
+                500: "#2a8cff",
+                600: "#1670f5",
+                700: "#1259e3",
+                800: "#1748b8",
+                900: "#19408f",
+              },
+              secondary: {
+                500: "#64748b",
+                600: "#475569",
+              },
+              danger: "#ef4444",
+              warning: "#f59e0b",
+              success: "#10b981",
+              lightblue: "#F0F8FF",
+            },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              display: ["Urbanist", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Google Fonts -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Urbanist:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Font Awesome -->
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='index.css') }}"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
   </head>
-  <body>
-    <div class="auth-container" id="auth-container">
-      <!-- Login Form -->
-      <form class="auth-form" id="login-form" action="/login" method="POST">
-        <h2>Welcome Back</h2>
-        <input type="email" name="email" placeholder="Email" required />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          required
-        />
-        <button type="submit">Login</button>
-        <p>
-          Don't have an account? <a href="#" onclick="toggleForm()">Sign up</a>
-        </p>
-      </form>
+  <body
+    class="bg-lightblue min-h-screen font-sans flex items-center justify-center p-4"
+  >
+    <!-- Auth Container -->
+    <div class="max-w-md w-full">
+      <!-- Logo -->
+      <div class="text-center mb-8">
+        <a href="/" class="inline-flex items-center gap-2 justify-center">
+          <div
+            class="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white shadow-sm"
+          >
+            <i class="fas fa-water text-xl"></i>
+          </div>
+          <span class="text-2xl font-display font-semibold text-primary-600"
+            >TidePulse</span
+          >
+        </a>
+      </div>
 
-      <!-- Sign Up Form (hidden by default) -->
-      <form
-        class="auth-form hidden"
-        id="signup-form"
-        action="/signup"
-        method="POST"
-      >
-        <h2>Create Account</h2>
-        <input type="text" name="username" placeholder="Username" required />
-        <input type="email" name="email" placeholder="Email" required />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          required
-        />
-        <button type="submit">Sign Up</button>
-        <p>
-          Already have an account? <a href="#" onclick="toggleForm()">Login</a>
-        </p>
-      </form>
+      <!-- Card Container -->
+      <div class="bg-white shadow-sm rounded-xl overflow-hidden">
+        <!-- Tabs -->
+        <div class="flex border-b border-gray-200">
+          <button
+            id="login-tab"
+            class="auth-tab flex-1 py-4 font-medium text-center text-primary-600 border-b-2 border-primary-600"
+          >
+            Login
+          </button>
+          <button
+            id="signup-tab"
+            class="auth-tab flex-1 py-4 font-medium text-center text-gray-500 hover:text-gray-700"
+          >
+            Sign Up
+          </button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-form" class="auth-form p-6">
+          <h2 class="text-xl font-display font-semibold text-gray-900 mb-6">
+            Welcome Back
+          </h2>
+
+          <form action="/login" method="POST">
+            <div class="space-y-5">
+              <div>
+                <label
+                  for="login-email"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Email</label
+                >
+                <div class="relative">
+                  <div
+                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  >
+                    <i class="fas fa-envelope text-gray-400"></i>
+                  </div>
+                  <input
+                    type="email"
+                    id="login-email"
+                    name="email"
+                    class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="your@email.com"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label
+                    for="login-password"
+                    class="block text-sm font-medium text-gray-700"
+                    >Password</label
+                  >
+                  <a
+                    href="#"
+                    class="text-xs text-primary-600 hover:text-primary-800"
+                    >Forgot password?</a
+                  >
+                </div>
+                <div class="relative">
+                  <div
+                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  >
+                    <i class="fas fa-lock text-gray-400"></i>
+                  </div>
+                  <input
+                    type="password"
+                    id="login-password"
+                    name="password"
+                    class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                />
+                <label
+                  for="remember-me"
+                  class="ml-2 block text-sm text-gray-700"
+                >
+                  Remember me
+                </label>
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  class="w-full px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition duration-200"
+                >
+                  Login
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Sign Up Form -->
+        <div id="signup-form" class="auth-form p-6 hidden">
+          <h2 class="text-xl font-display font-semibold text-gray-900 mb-6">
+            Create Your Account
+          </h2>
+
+          <form action="/signup" method="POST">
+            <div class="space-y-5">
+              <div>
+                <label
+                  for="signup-username"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Username</label
+                >
+                <div class="relative">
+                  <div
+                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  >
+                    <i class="fas fa-user text-gray-400"></i>
+                  </div>
+                  <input
+                    type="text"
+                    id="signup-username"
+                    name="username"
+                    class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="username"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  for="signup-email"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Email</label
+                >
+                <div class="relative">
+                  <div
+                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  >
+                    <i class="fas fa-envelope text-gray-400"></i>
+                  </div>
+                  <input
+                    type="email"
+                    id="signup-email"
+                    name="email"
+                    class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="your@email.com"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  for="signup-password"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Password</label
+                >
+                <div class="relative">
+                  <div
+                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                  >
+                    <i class="fas fa-lock text-gray-400"></i>
+                  </div>
+                  <input
+                    type="password"
+                    id="signup-password"
+                    name="password"
+                    class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+                <p class="mt-1 text-xs text-gray-500">
+                  Must be at least 8 characters with at least one letter and one
+                  number
+                </p>
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  class="w-full px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition duration-200"
+                >
+                  Create Account
+                </button>
+              </div>
+
+              <div class="text-sm text-center text-gray-600">
+                By signing up, you agree to our
+                <a href="#" class="text-primary-600 hover:text-primary-800"
+                  >Terms of Service</a
+                >
+                and
+                <a href="#" class="text-primary-600 hover:text-primary-800"
+                  >Privacy Policy</a
+                >
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Back to Home -->
+      <div class="text-center mt-6">
+        <a
+          href="/"
+          class="text-sm text-gray-600 hover:text-primary-600 flex items-center justify-center"
+        >
+          <i class="fas fa-arrow-left mr-2"></i> Back to home
+        </a>
+      </div>
     </div>
-    <script src="{{ url_for('static', filename='auth.js') }}"></script>
+
+    <!-- JavaScript -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const loginTab = document.getElementById("login-tab");
+        const signupTab = document.getElementById("signup-tab");
+        const loginForm = document.getElementById("login-form");
+        const signupForm = document.getElementById("signup-form");
+
+        // Switch to login tab
+        loginTab.addEventListener("click", function () {
+          loginTab.classList.add(
+            "text-primary-600",
+            "border-b-2",
+            "border-primary-600"
+          );
+          loginTab.classList.remove("text-gray-500");
+
+          signupTab.classList.remove(
+            "text-primary-600",
+            "border-b-2",
+            "border-primary-600"
+          );
+          signupTab.classList.add("text-gray-500");
+
+          loginForm.classList.remove("hidden");
+          signupForm.classList.add("hidden");
+
+          document.title = "TidePulse | Login";
+        });
+
+        // Switch to signup tab
+        signupTab.addEventListener("click", function () {
+          signupTab.classList.add(
+            "text-primary-600",
+            "border-b-2",
+            "border-primary-600"
+          );
+          signupTab.classList.remove("text-gray-500");
+
+          loginTab.classList.remove(
+            "text-primary-600",
+            "border-b-2",
+            "border-primary-600"
+          );
+          loginTab.classList.add("text-gray-500");
+
+          signupForm.classList.remove("hidden");
+          loginForm.classList.add("hidden");
+
+          document.title = "TidePulse | Sign Up";
+        });
+
+        // Check for error messages in the URL (for redirects from failed login/signup)
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get("error");
+        const action = urlParams.get("action");
+
+        if (error) {
+          const errorMsg = document.createElement("div");
+          errorMsg.className = "bg-red-50 border-l-4 border-red-500 p-4 mb-6";
+          errorMsg.innerHTML = `<div class="flex">
+            <div class="flex-shrink-0">
+              <i class="fas fa-exclamation-circle text-red-500"></i>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-red-700">${error}</p>
+            </div>
+          </div>`;
+
+          if (action === "signup") {
+            signupForm.insertBefore(errorMsg, signupForm.firstChild);
+            signupTab.click();
+          } else {
+            loginForm.insertBefore(errorMsg, loginForm.firstChild);
+          }
+        }
+      });
+    </script>
   </body>
 </html>

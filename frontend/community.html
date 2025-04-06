@@ -62,7 +62,7 @@
   <body class="bg-lightblue font-sans">
     <!-- Navbar -->
     <nav
-      class="fixed w-full top-0 left-0 z-50 flex items-center justify-between py-4 px-6"
+      class="fixed w-full top-0 left-0 z-50 flex items-center justify-between py-4 px-6 bg-white/80 backdrop-blur-sm shadow-sm"
     >
       <!-- Logo - left corner -->
       <a href="/" class="flex items-center gap-2">
@@ -97,7 +97,7 @@
             >Flood map</a
           >
           <a
-            href="/#resources"
+            href="/#safety"
             class="nav-link text-gray-700 hover:text-primary-600 text-sm"
             >Safety</a
           >
@@ -105,13 +105,97 @@
       </div>
 
       <!-- Login button - right corner -->
-      <a href="/auth" class="auth-btn flex items-center">
-        <div
-          class="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200 shadow-sm"
+      <div class="relative" id="user-menu-container">
+        {% if user %}
+        <!-- User menu when logged in -->
+        <button
+          id="user-menu-button"
+          class="flex items-center focus:outline-none"
         >
-          <i class="fas fa-user text-gray-700"></i>
+          <div class="flex items-center">
+            <div class="relative">
+              <div
+                class="w-10 h-10 rounded-full bg-white overflow-hidden flex items-center justify-center border border-gray-200 shadow-sm"
+              >
+                {% if user.profile_image %}
+                <img
+                  src="{{ user.profile_image }}"
+                  alt="Profile"
+                  class="w-full h-full object-cover"
+                />
+                {% else %}
+                <i class="fas fa-user text-gray-700"></i>
+                {% endif %}
+              </div>
+              {% if notification_count > 0 %}
+              <div
+                class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center"
+              >
+                {{ notification_count }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div
+          id="user-dropdown"
+          class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50"
+        >
+          <div class="px-4 py-3 border-b border-gray-100">
+            <p class="text-sm font-medium text-gray-900">
+              {{ user.display_name or user.username }}
+            </p>
+            <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
+          </div>
+          <div class="py-1">
+            <a
+              href="/profile"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >Your Profile</a
+            >
+            <a
+              href="/profile/edit"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >Edit Profile</a
+            >
+            <a
+              href="/notifications"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Notifications {% if notification_count > 0 %}
+              <span
+                class="ml-1 bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full"
+                >{{ notification_count }}</span
+              >
+              {% endif %}
+            </a>
+            <a
+              href="/badges"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >Your Badges</a
+            >
+          </div>
+          <div class="py-1 border-t border-gray-100">
+            <a
+              href="/logout"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >Logout</a
+            >
+          </div>
         </div>
-      </a>
+        {% else %}
+        <!-- Show login button when logged out -->
+        <a href="/auth" class="auth-btn flex items-center">
+          <div
+            class="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200 shadow-sm"
+          >
+            <i class="fas fa-user text-gray-700"></i>
+          </div>
+        </a>
+        {% endif %}
+      </div>
     </nav>
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 mt-24">
@@ -376,5 +460,73 @@
 
     <!-- JavaScript -->
     <script src="{{ url_for('static', filename='community.js') }}"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // User menu dropdown toggle
+        const userMenuButton = document.getElementById("user-menu-button");
+        const userDropdown = document.getElementById("user-dropdown");
+
+        if (userMenuButton && userDropdown) {
+          userMenuButton.addEventListener("click", function () {
+            userDropdown.classList.toggle("hidden");
+          });
+
+          // Close dropdown when clicking outside
+          document.addEventListener("click", function (event) {
+            const isClickInside =
+              userMenuButton.contains(event.target) ||
+              userDropdown.contains(event.target);
+
+            if (!isClickInside && !userDropdown.classList.contains("hidden")) {
+              userDropdown.classList.add("hidden");
+            }
+          });
+        }
+
+        // Create post button functionality
+        const createPostBtns = document.querySelectorAll("#create-post-btn");
+        const postForm = document.getElementById("post-form");
+        const cancelPost = document.getElementById("cancel-post");
+
+        createPostBtns.forEach((btn) => {
+          btn.addEventListener("click", function () {
+            postForm.classList.remove("hidden");
+            window.scrollTo({
+              top: postForm.offsetTop - 100,
+              behavior: "smooth",
+            });
+          });
+        });
+
+        if (cancelPost) {
+          cancelPost.addEventListener("click", function () {
+            postForm.classList.add("hidden");
+          });
+        }
+
+        // Filter buttons functionality
+        const filterButtons = document.querySelectorAll(".filter-btn");
+
+        filterButtons.forEach((button) => {
+          button.addEventListener("click", function () {
+            const filter = this.getAttribute("data-filter");
+
+            // Update active button styles
+            filterButtons.forEach((btn) => {
+              if (btn.getAttribute("data-filter") === filter) {
+                btn.classList.add("bg-primary-50", "text-primary-700");
+                btn.classList.remove("text-gray-700", "hover:bg-gray-50");
+              } else {
+                btn.classList.remove("bg-primary-50", "text-primary-700");
+                btn.classList.add("text-gray-700", "hover:bg-gray-50");
+              }
+            });
+
+            // Filter posts would go here
+            console.log("Filter selected:", filter);
+          });
+        });
+      });
+    </script>
   </body>
 </html>

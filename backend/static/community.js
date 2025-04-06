@@ -25,7 +25,7 @@ function initializeFilters() {
         filterButtons.forEach(button => {
             button.addEventListener('click', () => {
                 // Remove active state from all buttons
-                filterButtons.forEach(btn => {
+        filterButtons.forEach(btn => {
                     btn.classList.remove('bg-primary-50', 'text-primary-700');
                     btn.classList.add('text-gray-700', 'hover:bg-gray-50');
                 });
@@ -89,7 +89,7 @@ function fetchAndDisplayPosts() {
                 if (emptyCreatePostBtn) {
                     emptyCreatePostBtn.addEventListener('click', () => {
                         const createPostBtn = document.getElementById('create-post-btn');
-                        if (createPostBtn) {
+    if (createPostBtn) {
                             createPostBtn.click();
                         }
                     });
@@ -578,11 +578,11 @@ function initializeCommentForms() {
                                 <span class="text-xs text-gray-500">Just now</span>
                             </div>
                             <p class="text-sm text-gray-700">${commentText}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
+            </div>
+        </div>
+        </div>
+    `;
+    
             commentsContainer.insertAdjacentHTML('afterbegin', commentHTML);
             
             // Clear the textarea

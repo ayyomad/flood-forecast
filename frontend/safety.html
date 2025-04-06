@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TidePulse | Flood Safety Assistant</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: "#eef8ff",
+                100: "#d9edff",
+                200: "#bce0ff",
+                300: "#8acbff",
+                400: "#51adff",
+                500: "#2a8cff",
+                600: "#1670f5",
+                700: "#1259e3",
+                800: "#1748b8",
+                900: "#19408f",
+              },
+              secondary: {
+                500: "#64748b",
+                600: "#475569",
+              },
+              danger: "#ef4444",
+              warning: "#f59e0b",
+              success: "#10b981",
+              lightblue: "#F0F8FF",
+            },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              display: ["Urbanist", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Urbanist:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <!-- Custom Styles -->
+    <style>
+      .main-container {
+        height: calc(100vh - 72px);
+      }
+      .chat-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      .chat-messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 1.5rem 1rem;
+      }
+      .message-container {
+        max-width: 850px;
+        margin: 0 auto;
+        width: 100%;
+        padding: 1rem 0;
+      }
+      .user-message {
+        background-color: rgba(26, 112, 245, 0.1);
+        border-radius: 18px 18px 4px 18px;
+        margin-left: auto;
+        max-width: 85%;
+      }
+      .assistant-message {
+        background-color: rgba(240, 248, 255, 0.6);
+        border-radius: 18px 18px 18px 4px;
+        max-width: 85%;
+      }
+      .typing-indicator {
+        display: flex;
+        align-items: center;
+      }
+      .typing-indicator span {
+        height: 8px;
+        width: 8px;
+        background-color: #3b82f6;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 3px;
+        animation: typing 1.5s infinite ease-in-out;
+      }
+      .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      @keyframes typing {
+        0% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+        100% {
+          transform: translateY(0px);
+        }
+      }
+      .side-panel {
+        width: 350px;
+        transition: all 0.3s ease;
+      }
+      .side-panel-content {
+        height: calc(100vh - 72px);
+        overflow-y: auto;
+      }
+      @media (max-width: 1023px) {
+        .side-panel {
+          position: fixed;
+          right: -350px;
+          top: 72px;
+          bottom: 0;
+          z-index: 40;
+        }
+        .side-panel.active {
+          right: 0;
+        }
+        .overlay {
+          position: fixed;
+          inset: 0;
+          background-color: rgba(0, 0, 0, 0.5);
+          z-index: 30;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.3s ease;
+        }
+        .overlay.active {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      }
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+    </style>
+  </head>
+  <body class="bg-lightblue font-sans">
+    <!-- Navbar -->
+    <nav
+      class="fixed w-full top-0 left-0 z-50 flex items-center justify-between py-4 px-6 bg-white/80 backdrop-blur-sm shadow-sm"
+    >
+      <!-- Logo - left corner -->
+      <a href="/" class="flex items-center gap-2">
+        <div
+          class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white shadow-sm"
+        >
+          <i class="fas fa-water text-lg"></i>
+        </div>
+        <span class="text-xl font-display font-semibold text-primary-600"
+          >TidePulse</span
+        >
+      </a>
+
+      <!-- Navigation bar - centered with minimal width -->
+      <div
+        class="bg-white/90 backdrop-blur-lg rounded-full shadow-sm px-8 py-2.5"
+      >
+        <div class="flex items-center space-x-12">
+          <a
+            href="/"
+            class="nav-link text-gray-700 hover:text-primary-600 text-sm"
+            >Home</a
+          >
+          <a
+            href="/community"
+            class="nav-link text-gray-700 hover:text-primary-600 text-sm"
+            >Community</a
+          >
+          <a
+            href="/#flood-map"
+            class="nav-link text-gray-700 hover:text-primary-600 text-sm"
+            >Flood map</a
+          >
+          <a
+            href="/#safety"
+            class="nav-link text-primary-600 font-medium text-sm"
+            >Safety</a
+          >
+        </div>
+      </div>
+
+      <!-- User Menu - right corner -->
+      <div class="relative" id="user-menu-container">
+        {% if user %}
+        <!-- User menu when logged in -->
+        <button
+          id="user-menu-button"
+          class="flex items-center focus:outline-none"
+        >
+          <div class="flex items-center">
+            <div class="relative">
+              <div
+                class="w-10 h-10 rounded-full bg-white overflow-hidden flex items-center justify-center border border-gray-200 shadow-sm"
+              >
+                {% if user.profile_image %}
+                <img
+                  src="{{ user.profile_image }}"
+                  alt="Profile"
+                  class="w-full h-full object-cover"
+                />
+                {% else %}
+                <i class="fas fa-user text-gray-700"></i>
+                {% endif %}
+              </div>
+              {% if notification_count > 0 %}
+              <div
+                class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center"
+              >
+                {{ notification_count }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div
+          id="user-dropdown"
+          class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50"
+        >
+          <div class="px-4 py-3 border-b border-gray-100">
+            <p class="text-sm font-medium text-gray-900">
+              {{ user.display_name or user.username }}
+            </p>
+            <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
+          </div>
+          <div class="py-1">
+            <a
+              href="/profile"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >Your Profile</a
+            >
+            <a
+              href="/profile/edit"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >Edit Profile</a
+            >
+            <a
+              href="/notifications"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Notifications {% if notification_count > 0 %}
+              <span
+                class="ml-1 bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full"
+                >{{ notification_count }}</span
+              >
+              {% endif %}
+            </a>
+            <a
+              href="/badges"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >Your Badges</a
+            >
+          </div>
+          <div class="py-1 border-t border-gray-100">
+            <a
+              href="/logout"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >Logout</a
+            >
+          </div>
+        </div>
+        {% else %}
+        <!-- Show login button when logged out -->
+        <a href="/auth" id="auth-btn" class="flex items-center">
+          <div
+            class="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200 shadow-sm"
+          >
+            <i class="fas fa-user text-gray-700"></i>
+          </div>
+        </a>
+        {% endif %}
+      </div>
+    </nav>
+
+    <!-- Mobile Nav Overlay -->
+    <div id="overlay" class="overlay"></div>
+
+    <!-- Main Content -->
+    <div class="pt-[72px] flex">
+      <!-- Chat Main Area -->
+      <main class="flex-grow main-container">
+        <div class="chat-container">
+          <!-- Chat Header -->
+          <div
+            class="py-4 px-6 border-b border-gray-200 bg-white flex items-center justify-between"
+          >
+            <div class="flex items-center">
+              <div
+                class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-robot text-primary-600"></i>
+              </div>
+              <div>
+                <h1 class="font-semibold text-gray-900">
+                  Flood Safety Assistant
+                </h1>
+                <p class="text-xs text-green-600">
+                  <i class="fas fa-circle text-xs mr-1"></i> Online
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <button
+                id="clear-chat"
+                class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors"
+                title="Clear chat"
+              >
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat Messages -->
+          <div id="chat-messages" class="chat-messages bg-slate-50">
+            <!-- Welcome Message -->
+            <div class="message-container">
+              <div class="flex">
+                <div
+                  class="w-10 h-10 rounded-full bg-primary-100 flex-shrink-0 flex items-center justify-center mr-3 mt-1"
+                >
+                  <i class="fas fa-robot text-primary-600"></i>
+                </div>
+                <div
+                  class="assistant-message p-4 shadow-sm border border-gray-100"
+                >
+                  <div class="prose prose-sm max-w-none">
+                    <p>
+                      <strong
+                        >Hello and welcome to the TidePulse Safety
+                        Assistant!</strong
+                      >
+                    </p>
+                    <p class="mt-2">
+                      I'm here to provide you with flood-related information,
+                      safety advice, and emergency guidance. You can ask me
+                      about:
+                    </p>
+                    <ul class="mt-2 space-y-1">
+                      <li>• Creating an emergency plan or kit</li>
+                      <li>• What to do during a flood emergency</li>
+                      <li>• Post-flood safety and cleanup</li>
+                      <li>• Health concerns related to flooding</li>
+                      <li>• Monitoring flood warnings and alerts</li>
+                      <li>• Keeping pets safe during floods</li>
+                      <li>• How to help others in your community</li>
+                    </ul>
+                    <p class="mt-2">
+                      How can I assist you with flood safety today?
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Messages will be added here dynamically -->
+          </div>
+
+          <!-- Chat Input -->
+          <div
+            class="px-4 md:px-6 py-4 border-t border-gray-200 bg-white sticky bottom-0 z-10"
+          >
+            <div class="max-w-3xl mx-auto">
+              <form id="chat-form" class="flex items-end gap-2">
+                <div class="relative flex-grow">
+                  <textarea
+                    id="message-input"
+                    rows="1"
+                    class="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none shadow-sm"
+                    placeholder="Ask a flood safety question..."
+                  ></textarea>
+                </div>
+                <button
+                  type="submit"
+                  class="bg-primary-600 hover:bg-primary-700 text-white p-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm"
+                >
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </form>
+              <p class="mt-2 text-xs text-gray-500 text-center">
+                Ask me anything about flood safety, preparedness, or emergency
+                response
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Side Panel with Emergency Resources -->
+      <aside
+        id="side-panel"
+        class="side-panel bg-white border-l border-gray-200 shadow-lg"
+      >
+        <div class="side-panel-content p-5 space-y-6">
+          <div class="mb-4">
+            <h2 class="text-xl font-display font-bold text-gray-900 mb-2">
+              Emergency Resources
+            </h2>
+            <p class="text-sm text-gray-600">
+              Critical contacts and resources during flood emergencies
+            </p>
+          </div>
+
+          <!-- Emergency Contacts Card -->
+          <div
+            class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100"
+          >
+            <div
+              class="px-4 py-3 bg-red-50 border-b border-red-100 flex items-center"
+            >
+              <div
+                class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-phone-alt text-red-600"></i>
+              </div>
+              <h3 class="font-semibold text-gray-900">Emergency Contacts</h3>
+            </div>
+            <div class="p-4 space-y-4">
+              <div
+                class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition"
+              >
+                <div class="flex items-center">
+                  <div
+                    class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-ambulance text-red-600"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-medium text-gray-700"
+                      >Ambulance</span
+                    >
+                    <p class="text-xs text-gray-500">Medical emergencies</p>
+                  </div>
+                </div>
+                <a
+                  href="tel:911"
+                  class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center"
+                >
+                  <i class="fas fa-phone-alt mr-2"></i> 911
+                </a>
+              </div>
+
+              <div
+                class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition"
+              >
+                <div class="flex items-center">
+                  <div
+                    class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-shield-alt text-blue-600"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-medium text-gray-700"
+                      >Police</span
+                    >
+                    <p class="text-xs text-gray-500">Emergency response</p>
+                  </div>
+                </div>
+                <a
+                  href="tel:911"
+                  class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center"
+                >
+                  <i class="fas fa-phone-alt mr-2"></i> 911
+                </a>
+              </div>
+
+              <div
+                class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition"
+              >
+                <div class="flex items-center">
+                  <div
+                    class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-hard-hat text-yellow-600"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-medium text-gray-700"
+                      >Rescue Team</span
+                    >
+                    <p class="text-xs text-gray-500">Evacuation assistance</p>
+                  </div>
+                </div>
+                <a
+                  href="tel:911"
+                  class="bg-yellow-50 hover:bg-yellow-100 text-yellow-600 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center"
+                >
+                  <i class="fas fa-phone-alt mr-2"></i> 911
+                </a>
+              </div>
+
+              <div
+                class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition"
+              >
+                <div class="flex items-center">
+                  <div
+                    class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-info-circle text-green-600"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-medium text-gray-700"
+                      >Flood Hotline</span
+                    >
+                    <p class="text-xs text-gray-500">
+                      Information & assistance
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href="tel:18006211451"
+                  class="bg-green-50 hover:bg-green-100 text-green-600 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center"
+                >
+                  <i class="fas fa-phone-alt mr-2"></i> 1-800-621-1451
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Guides Card -->
+          <div
+            class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100"
+          >
+            <div
+              class="px-4 py-3 bg-primary-50 border-b border-primary-100 flex items-center"
+            >
+              <div
+                class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-book text-primary-600"></i>
+              </div>
+              <h3 class="font-semibold text-gray-900">Quick Guides</h3>
+            </div>
+            <div class="p-4 space-y-3">
+              <a
+                href="#"
+                class="flex items-center p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition"
+              >
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-clipboard-list text-blue-600"></i>
+                </div>
+                <div>
+                  <h4 class="text-sm font-medium text-gray-800">
+                    Flood Survival Checklist
+                  </h4>
+                  <p class="text-xs text-gray-500 mt-0.5">
+                    Essential items to prepare
+                  </p>
+                </div>
+              </a>
+              <a
+                href="#"
+                class="flex items-center p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition"
+              >
+                <div
+                  class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-exclamation-circle text-yellow-600"></i>
+                </div>
+                <div>
+                  <h4 class="text-sm font-medium text-gray-800">
+                    Emergency Steps
+                  </h4>
+                  <p class="text-xs text-gray-500 mt-0.5">
+                    What to do during a flood
+                  </p>
+                </div>
+              </a>
+              <a
+                href="#"
+                class="flex items-center p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition"
+              >
+                <div
+                  class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-map-marked-alt text-green-600"></i>
+                </div>
+                <div>
+                  <h4 class="text-sm font-medium text-gray-800">
+                    Evacuation Routes
+                  </h4>
+                  <p class="text-xs text-gray-500 mt-0.5">
+                    Find safe paths to shelters
+                  </p>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <!-- Nearby Shelters Card -->
+          <div
+            class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100"
+          >
+            <div
+              class="px-4 py-3 bg-primary-50 border-b border-primary-100 flex items-center"
+            >
+              <div
+                class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-home text-primary-600"></i>
+              </div>
+              <h3 class="font-semibold text-gray-900">Nearby Shelters</h3>
+            </div>
+            <div class="p-4">
+              <div class="mb-4">
+                <button
+                  id="locate-shelters"
+                  class="flex items-center justify-center w-full px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition shadow-sm"
+                >
+                  <i class="fas fa-location-arrow mr-2"></i>
+                  Find Nearby Shelters
+                </button>
+                <p class="text-xs text-gray-500 mt-2 text-center">
+                  Uses your location to find emergency shelters
+                </p>
+              </div>
+              <div id="shelter-list" class="hidden space-y-4 mt-4">
+                <!-- Will be populated with JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Weather Alerts -->
+          <div
+            class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100"
+          >
+            <div
+              class="px-4 py-3 bg-blue-50 border-b border-blue-100 flex items-center"
+            >
+              <div
+                class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-cloud-rain text-blue-600"></i>
+              </div>
+              <h3 class="font-semibold text-gray-900">Weather Alerts</h3>
+            </div>
+            <div class="p-4">
+              <div id="weather-alerts" class="text-center py-3">
+                <i class="fas fa-sync fa-spin text-gray-400 mb-2"></i>
+                <p class="text-sm text-gray-500">
+                  Checking for weather alerts...
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='safety.js') }}"></script>
+    <script>
+      // Mobile side panel toggle
+      document.addEventListener("DOMContentLoaded", () => {
+        const toggleButton = document.getElementById("toggle-panel");
+        const sidePanel = document.getElementById("side-panel");
+        const overlay = document.getElementById("overlay");
+
+        if (toggleButton && sidePanel && overlay) {
+          toggleButton.addEventListener("click", () => {
+            sidePanel.classList.toggle("active");
+            overlay.classList.toggle("active");
+            document.body.classList.toggle("overflow-hidden");
+          });
+
+          overlay.addEventListener("click", () => {
+            sidePanel.classList.remove("active");
+            overlay.classList.remove("active");
+            document.body.classList.remove("overflow-hidden");
+          });
+        }
+
+        // Mock weather alerts
+        setTimeout(() => {
+          const weatherAlertsDiv = document.getElementById("weather-alerts");
+          if (weatherAlertsDiv) {
+            weatherAlertsDiv.innerHTML = `
+              <div class="bg-yellow-50 border-l-4 border-yellow-500 p-3 rounded-md text-left">
+                <div class="flex">
+                  <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                  </div>
+                  <div class="ml-3">
+                    <h4 class="text-sm font-medium text-yellow-800">Flood Watch</h4>
+                    <p class="text-xs text-yellow-700 mt-1">Issued for Miami-Dade County until 8:00 PM tonight.</p>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        }, 2000);
+      });
+    </script>
+  </body>
+</html>

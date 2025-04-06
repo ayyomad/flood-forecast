@@ -86,7 +86,7 @@
       .section {
         display: none;
         opacity: 0;
-        transition: opacity 0.3s ease-in-out;
+        transition: opacity 0.5s ease-in-out;
       }
 
       .section.active {
@@ -100,6 +100,7 @@
         height: 100%;
         min-height: 400px;
         z-index: 10;
+        border-radius: 0.75rem;
       }
 
       /* Dropdown menu behavior */
@@ -131,6 +132,13 @@
         overflow: hidden;
         z-index: 10;
         min-height: 400px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        transition: box-shadow 0.3s ease;
+      }
+
+      #map:hover,
+      #flood-map-view:hover {
+        box-shadow: 0 6px 30px rgba(0, 0, 0, 0.08);
       }
 
       @media (min-width: 768px) {
@@ -147,12 +155,60 @@
       .hidden {
         display: none !important;
       }
+
+      /* Form enhancements */
+      input:focus::placeholder {
+        opacity: 0.5;
+        transition: opacity 0.3s ease;
+      }
+
+      button {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      button:active:not(:disabled) {
+        transform: translateY(1px);
+      }
+
+      /* Card & container animations */
+      .card-hover {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Risk meter animation */
+      #risk-meter {
+        transition: width 1s ease-out;
+      }
+
+      /* Gradient background animation */
+      @keyframes gradientFlow {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      .animated-gradient {
+        background: linear-gradient(270deg, #eef8ff, #d9edff, #f0f8ff);
+        background-size: 600% 600%;
+        animation: gradientFlow 15s ease infinite;
+      }
     </style>
   </head>
   <body class="font-sans bg-lightblue text-gray-900">
     <!-- Navbar -->
     <nav
-      class="fixed w-full top-0 left-0 z-50 flex items-center justify-between py-4 px-6"
+      class="fixed w-full top-0 left-0 z-50 flex items-center justify-between py-4 px-6 bg-white/80 backdrop-blur-sm shadow-sm"
     >
       <!-- Logo - left corner -->
       <a href="/" class="flex items-center gap-2">
@@ -171,7 +227,9 @@
         class="bg-white/90 backdrop-blur-lg rounded-full shadow-sm px-8 py-2.5"
       >
         <div class="flex items-center space-x-12">
-          <a href="#home" class="nav-link text-primary-600 font-medium text-sm"
+          <a
+            href="#home"
+            class="nav-link text-primary-600 font-medium text-sm home-nav"
             >Home</a
           >
           <a
@@ -181,45 +239,296 @@
           >
           <a
             href="#flood-map"
-            class="nav-link text-gray-700 hover:text-primary-600 text-sm"
+            class="nav-link text-gray-700 hover:text-primary-600 text-sm flood-map-nav"
             >Flood map</a
           >
           <a
-            href="#resources"
+            href="/#safety"
             class="nav-link text-gray-700 hover:text-primary-600 text-sm"
             >Safety</a
           >
         </div>
       </div>
 
-      <!-- Login button - right corner -->
-      <a href="/auth" class="auth-btn flex items-center">
-        <div
-          class="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200 shadow-sm"
+      <!-- Mobile Menu Button (shown on small screens) -->
+      <div class="md:hidden">
+        <button
+          id="mobile-menu-button"
+          class="text-gray-700 hover:text-primary-600 focus:outline-none"
         >
-          <i class="fas fa-user text-gray-700"></i>
+          <i class="fas fa-bars text-xl"></i>
+        </button>
+      </div>
+
+      <!-- User Menu - right corner -->
+      <div class="relative" id="user-menu-container">
+        <!-- Show dropdown toggle when logged in -->
+        <div id="user-logged-in" class="hidden">
+          <div class="flex items-center space-x-4">
+            <!-- Notifications -->
+            <div class="relative">
+              <button
+                id="notifications-button"
+                class="relative focus:outline-none"
+              >
+                <div
+                  class="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200 shadow-sm"
+                >
+                  <i class="fas fa-bell text-gray-700"></i>
+                </div>
+                <div
+                  id="notification-badge"
+                  class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center"
+                >
+                  0
+                </div>
+              </button>
+
+              <!-- Notifications Dropdown -->
+              <div
+                id="notifications-dropdown"
+                class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg overflow-hidden z-50"
+              >
+                <div
+                  class="px-4 py-3 border-b border-gray-100 flex justify-between items-center"
+                >
+                  <h3 class="text-sm font-medium text-gray-900">
+                    Notifications
+                  </h3>
+                  <button
+                    id="mark-all-read"
+                    class="text-xs text-primary-600 hover:text-primary-800"
+                  >
+                    Mark all as read
+                  </button>
+                </div>
+
+                <div id="notifications-list" class="max-h-80 overflow-y-auto">
+                  <!-- Notifications will be populated here -->
+                  <div class="py-8 text-center text-gray-500">
+                    <i
+                      class="fas fa-bell-slash text-gray-300 text-2xl mb-2"
+                    ></i>
+                    <p>No new notifications</p>
+                  </div>
+                </div>
+
+                <div class="px-4 py-2 border-t border-gray-100 text-center">
+                  <a
+                    href="/notifications"
+                    class="text-xs text-primary-600 hover:text-primary-800"
+                  >
+                    View all notifications
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Menu -->
+            <button
+              id="user-menu-button"
+              class="flex items-center focus:outline-none"
+            >
+              <div class="flex items-center">
+                <div
+                  id="profile-image"
+                  class="w-10 h-10 rounded-full bg-white overflow-hidden flex items-center justify-center border border-gray-200 shadow-sm"
+                >
+                  <i class="fas fa-user text-gray-700"></i>
+                </div>
+              </div>
+            </button>
+
+            <!-- User Dropdown Menu -->
+            <div
+              id="user-dropdown"
+              class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50"
+            >
+              <div class="px-4 py-3 border-b border-gray-100">
+                <p
+                  id="user-display-name"
+                  class="text-sm font-medium text-gray-900"
+                >
+                  User
+                </p>
+                <p id="user-email" class="text-xs text-gray-500 truncate">
+                  user@example.com
+                </p>
+              </div>
+              <div class="py-1">
+                <a
+                  href="/profile"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >Your Profile</a
+                >
+                <a
+                  href="/profile/edit"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >Edit Profile</a
+                >
+                <a
+                  href="/notifications"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Notifications
+                  <span
+                    id="menu-notification-badge"
+                    class="hidden ml-1 bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full"
+                    >0</span
+                  >
+                </a>
+                <a
+                  href="/badges"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >Your Badges</a
+                >
+              </div>
+              <div class="py-1 border-t border-gray-100">
+                <a
+                  href="/logout"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >Logout</a
+                >
+              </div>
+            </div>
+          </div>
         </div>
-      </a>
+
+        <!-- Show login button when logged out -->
+        <a href="/auth" id="auth-btn" class="flex items-center">
+          <div
+            class="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-200 shadow-sm"
+          >
+            <i class="fas fa-user text-gray-700"></i>
+          </div>
+        </a>
+      </div>
     </nav>
+
+    <!-- Mobile Menu (shown/hidden with JavaScript) -->
+    <div
+      id="mobile-menu"
+      class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-40 hidden"
+    >
+      <div
+        class="bg-white h-full w-64 shadow-xl transform transition-transform duration-300 ease-in-out"
+      >
+        <div
+          class="p-5 border-b border-gray-200 flex justify-between items-center"
+        >
+          <div class="flex items-center gap-2">
+            <div
+              class="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white"
+            >
+              <i class="fas fa-water text-sm"></i>
+            </div>
+            <span class="font-display font-semibold text-primary-600"
+              >TidePulse</span
+            >
+          </div>
+          <button
+            id="close-mobile-menu"
+            class="text-gray-500 hover:text-gray-700"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="py-6 px-5 space-y-6">
+          <div class="grid grid-cols-1 gap-y-4">
+            <a
+              href="#home"
+              class="mobile-nav flex items-center gap-3 text-primary-600 font-medium"
+            >
+              <i class="fas fa-home w-5 text-center"></i>
+              <span>Home</span>
+            </a>
+            <a
+              href="/community"
+              class="mobile-nav flex items-center gap-3 text-gray-700 hover:text-primary-600"
+            >
+              <i class="fas fa-users w-5 text-center"></i>
+              <span>Community</span>
+            </a>
+            <a
+              href="#flood-map"
+              class="mobile-nav flex items-center gap-3 text-gray-700 hover:text-primary-600"
+            >
+              <i class="fas fa-map-marked-alt w-5 text-center"></i>
+              <span>Flood Map</span>
+            </a>
+            <a
+              href="/safety"
+              class="mobile-nav flex items-center gap-3 text-gray-700 hover:text-primary-600"
+            >
+              <i class="fas fa-shield-alt w-5 text-center"></i>
+              <span>Safety</span>
+            </a>
+          </div>
+
+          <div class="pt-6 border-t border-gray-200">
+            <div id="mobile-logged-in" class="hidden space-y-4">
+              <a
+                href="/profile"
+                class="flex items-center gap-3 text-gray-700 hover:text-primary-600"
+              >
+                <i class="fas fa-user-circle w-5 text-center"></i>
+                <span>Your Profile</span>
+              </a>
+              <a
+                href="/profile/edit"
+                class="flex items-center gap-3 text-gray-700 hover:text-primary-600"
+              >
+                <i class="fas fa-cog w-5 text-center"></i>
+                <span>Edit Profile</span>
+              </a>
+              <a
+                href="/badges"
+                class="flex items-center gap-3 text-gray-700 hover:text-primary-600"
+              >
+                <i class="fas fa-award w-5 text-center"></i>
+                <span>Your Badges</span>
+              </a>
+              <a
+                href="/logout"
+                class="flex items-center gap-3 text-gray-700 hover:text-primary-600"
+              >
+                <i class="fas fa-sign-out-alt w-5 text-center"></i>
+                <span>Logout</span>
+              </a>
+            </div>
+
+            <div id="mobile-logged-out" class="space-y-2">
+              <a
+                href="/auth"
+                class="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-primary-600 hover:bg-primary-700"
+              >
+                Login / Sign up
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Main Content -->
     <main class="pt-24 overflow-hidden">
       <!-- Home Section -->
       <section id="home" class="section active min-h-screen">
         <!-- Hero Section -->
-        <div class="bg-gradient-to-b from-lightblue to-white py-16 md:py-24">
+        <div class="animated-gradient py-16 md:py-24">
           <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
-            <div class="text-center mb-16">
+            <div class="text-center mb-10">
               <h1
                 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6"
               >
                 <span class="relative inline-block">
                   <span class="relative z-10">Real-time Flood</span>
                   <span
-                    class="absolute bottom-1 left-0 w-full h-3 bg-primary/20 -z-10 transform -rotate-1"
+                    class="absolute bottom-1 left-0 w-full h-3 bg-primary-400/20 -z-10 transform -rotate-1"
                   ></span>
                 </span>
-                <span class="text-primary block mt-2"
+                <span class="text-primary-600 block mt-2"
                   >Forecasting & Monitoring</span
                 >
               </h1>
@@ -231,44 +540,53 @@
               </p>
 
               <!-- Search Form -->
-              <form id="search-form" class="max-w-md mx-auto relative">
-                <div class="relative flex items-center">
-                  <input
-                    type="text"
-                    id="location"
-                    placeholder="Enter your location..."
-                    class="w-full py-3 pl-12 pr-32 rounded-full border-none bg-white/70 backdrop-blur-sm text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                  />
-                  <div class="absolute left-4 text-primary">
-                    <i class="fas fa-search"></i>
-                  </div>
-                  <button
-                    type="submit"
-                    class="absolute right-2 bg-primary hover:bg-primary/90 text-white py-2 px-4 rounded-full text-sm font-medium transition-all"
-                  >
-                    Search
-                  </button>
-                </div>
-              </form>
-
-              <!-- Action Buttons -->
               <div
-                class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8"
+                class="max-w-3xl mx-auto bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm p-6 mb-8"
               >
+                <form id="search-form" class="relative">
+                  <div class="flex flex-col md:flex-row gap-3">
+                    <div class="relative flex-grow">
+                      <div
+                        class="absolute left-4 top-1/2 -translate-y-1/2 text-primary-600"
+                      >
+                        <i class="fas fa-search"></i>
+                      </div>
+                      <input
+                        type="text"
+                        id="location"
+                        placeholder="Enter your location..."
+                        class="w-full py-4 pl-12 pr-6 rounded-xl border border-gray-200 bg-white text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all text-base"
+                      />
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="submit"
+                        class="py-4 px-8 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-base font-medium transition-all flex items-center justify-center flex-shrink-0 shadow-sm"
+                      >
+                        <span>Get Forecast</span>
+                      </button>
+                      <button
+                        type="button"
+                        id="use-location-btn"
+                        class="py-4 px-4 bg-white hover:bg-gray-50 text-primary-600 border border-gray-200 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm transition-all"
+                        title="Use current location"
+                      >
+                        <i class="fas fa-location-crosshairs"></i>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Single Action Button -->
+              <div class="flex justify-center">
                 <button
                   id="forecast-btn"
-                  class="px-6 py-3 bg-[#007BFF] hover:bg-[#007BFF]/90 text-white rounded-full shadow-sm hover:shadow transition-all flex items-center gap-2 text-sm font-medium"
+                  class="px-8 py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-2 font-medium"
                 >
                   <i class="fas fa-map-marked-alt"></i>
-                  View Flood Map
+                  View Detailed Flood Map
                 </button>
-                <a
-                  href="/community"
-                  class="px-6 py-3 bg-white hover:bg-white/80 text-primary border border-primary/20 rounded-full shadow-sm hover:shadow transition-all flex items-center gap-2 text-sm font-medium"
-                >
-                  <i class="fas fa-users"></i>
-                  Join Community
-                </a>
               </div>
             </div>
 
@@ -276,14 +594,14 @@
             <div class="mt-6">
               <!-- Results Container -->
               <div
-                class="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm w-full max-w-3xl mx-auto mb-8 hidden"
+                class="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm w-full max-w-3xl mx-auto mb-8 hidden"
                 id="results"
               >
                 <div class="text-center py-12">
                   <div
-                    class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4"
+                    class="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4"
                   >
-                    <i class="fas fa-search text-2xl text-primary"></i>
+                    <i class="fas fa-search text-2xl text-primary-600"></i>
                   </div>
                   <h3 class="text-xl font-medium text-gray-800 mb-2">
                     Search for a location
@@ -301,62 +619,274 @@
                     class="relative h-96 md:h-[400px] rounded-2xl overflow-hidden shadow-sm border border-white/20"
                   >
                     <div id="map" class="h-full w-full"></div>
+                    <!-- Map Overlay with Legend -->
                     <div class="absolute bottom-4 right-4 z-20">
                       <div
-                        class="bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg text-xs text-gray-600 shadow-sm"
+                        class="bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg shadow-sm"
                       >
-                        <i class="fas fa-info-circle mr-1 text-primary"></i>
-                        Showing flood risk areas
+                        <div class="text-xs text-gray-600 font-medium mb-2">
+                          Flood Risk Level
+                        </div>
+                        <div class="flex items-center space-x-2">
+                          <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                          <span class="text-xs text-gray-600">High</span>
+                          <div
+                            class="w-3 h-3 rounded-full bg-orange-400 ml-2"
+                          ></div>
+                          <span class="text-xs text-gray-600">Medium</span>
+                          <div
+                            class="w-3 h-3 rounded-full bg-yellow-300 ml-2"
+                          ></div>
+                          <span class="text-xs text-gray-600">Low</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div>
                   <div
-                    class="bg-white/70 backdrop-blur-sm p-6 rounded-2xl shadow-sm h-full flex flex-col justify-center"
+                    class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm h-full flex flex-col overflow-hidden"
                   >
-                    <h3
-                      class="text-xl font-medium text-gray-800 mb-6 text-center"
-                    >
-                      Real-time Data
-                    </h3>
-                    <div class="space-y-4">
-                      <div
-                        class="flex justify-between items-center p-3 bg-blue-50/50 rounded-xl"
+                    <div class="p-4 border-b border-gray-100">
+                      <h3
+                        class="text-xl font-medium text-gray-800 flex items-center"
                       >
-                        <span class="text-sm font-medium text-gray-700"
-                          >Weather Updates</span
-                        >
-                        <span class="text-sm text-blue-600"
-                          ><i class="fas fa-cloud-rain mr-1"></i>
-                          Real-time</span
-                        >
-                      </div>
-                      <div
-                        class="flex justify-between items-center p-3 bg-green-50/50 rounded-xl"
-                      >
-                        <span class="text-sm font-medium text-gray-700"
-                          >Monitoring Stations</span
-                        >
-                        <span class="text-sm text-green-600"
-                          ><i class="fas fa-check-circle mr-1"></i> 24/7</span
-                        >
-                      </div>
-                      <div
-                        class="flex justify-between items-center p-3 bg-amber-50/50 rounded-xl"
-                      >
-                        <span class="text-sm font-medium text-gray-700"
-                          >Flood Alerts</span
-                        >
-                        <span class="text-sm text-amber-600"
-                          ><i class="fas fa-bell mr-1"></i> Instant</span
-                        >
+                        <i class="fas fa-chart-bar text-primary mr-2"></i>
+                        Flood Risk Analysis
+                      </h3>
+                    </div>
+                    <div class="flex-grow p-4 overflow-y-auto">
+                      <div class="space-y-4">
+                        <!-- Weather Condition Card -->
+                        <div class="bg-blue-50/50 rounded-xl p-4">
+                          <div class="flex items-start">
+                            <div class="mr-3">
+                              <div
+                                class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center"
+                              >
+                                <i class="fas fa-cloud-sun text-blue-600"></i>
+                              </div>
+                            </div>
+                            <div class="flex-grow">
+                              <div class="flex justify-between">
+                                <h4 class="text-sm font-medium text-gray-700">
+                                  Current Weather
+                                </h4>
+                                <span class="text-xs text-blue-600"
+                                  >Real-time</span
+                                >
+                              </div>
+                              <div class="mt-2 grid grid-cols-2 gap-2">
+                                <div class="text-xs">
+                                  <span class="text-gray-500 block"
+                                    >Rainfall</span
+                                  >
+                                  <span class="font-medium" id="rainfall-value"
+                                    >--</span
+                                  >
+                                </div>
+                                <div class="text-xs">
+                                  <span class="text-gray-500 block"
+                                    >Temperature</span
+                                  >
+                                  <span class="font-medium" id="temp-value"
+                                    >--</span
+                                  >
+                                </div>
+                                <div class="text-xs">
+                                  <span class="text-gray-500 block"
+                                    >Wind Speed</span
+                                  >
+                                  <span class="font-medium" id="wind-value"
+                                    >--</span
+                                  >
+                                </div>
+                                <div class="text-xs">
+                                  <span class="text-gray-500 block"
+                                    >Humidity</span
+                                  >
+                                  <span class="font-medium" id="humidity-value"
+                                    >--</span
+                                  >
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Risk Assessment Card -->
+                        <div class="rounded-xl p-4" id="risk-card">
+                          <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-medium text-gray-700">
+                              Risk Assessment
+                            </h4>
+                            <div
+                              class="px-2 py-0.5 rounded text-xs font-medium"
+                              id="risk-badge"
+                            >
+                              Awaiting Data
+                            </div>
+                          </div>
+
+                          <!-- Risk Meter -->
+                          <div
+                            class="h-3 rounded-full bg-gray-200 overflow-hidden mb-2"
+                          >
+                            <div
+                              class="h-full rounded-full"
+                              id="risk-meter"
+                              style="width: 0%"
+                            ></div>
+                          </div>
+
+                          <!-- Risk Description -->
+                          <p
+                            class="text-xs text-gray-600 mt-2"
+                            id="risk-description"
+                          >
+                            Search for a location to see flood risk assessment
+                          </p>
+                        </div>
+
+                        <!-- Emergency Tips Card -->
+                        <div class="bg-amber-50/50 rounded-xl p-4">
+                          <div class="flex items-start">
+                            <div class="mr-3">
+                              <div
+                                class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center"
+                              >
+                                <i
+                                  class="fas fa-exclamation-triangle text-amber-600"
+                                ></i>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 class="text-sm font-medium text-gray-700">
+                                Safety Tips
+                              </h4>
+                              <p
+                                class="text-xs text-gray-600 mt-1"
+                                id="safety-tips"
+                              >
+                                Tips will be customized based on your local risk
+                                level.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div class="mt-6 text-center">
-                      <p class="text-sm text-gray-600">
-                        Our system processes data from multiple sources to
-                        provide the most accurate flood predictions.
+                    <!-- Action Button -->
+                    <div class="p-4 border-t border-gray-100">
+                      <button
+                        id="detailed-forecast-btn"
+                        class="w-full py-2 px-4 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center"
+                      >
+                        <i class="fas fa-chart-line mr-2"></i>
+                        View Detailed Forecast
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Features Section -->
+              <div class="my-16">
+                <div class="text-center mb-12">
+                  <h2 class="text-3xl font-bold text-gray-900 mb-4">
+                    Key Features
+                  </h2>
+                  <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    TidePulse provides essential tools and data to help you stay
+                    safe during flood events
+                  </p>
+                </div>
+
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                >
+                  <!-- Feature 1 -->
+                  <div
+                    class="bg-white rounded-xl shadow-sm overflow-hidden card-hover"
+                  >
+                    <div class="h-2 bg-primary-600"></div>
+                    <div class="p-6">
+                      <div
+                        class="w-14 h-14 rounded-full bg-primary-50 flex items-center justify-center mb-4"
+                      >
+                        <i
+                          class="fas fa-map-marked-alt text-primary-600 text-xl"
+                        ></i>
+                      </div>
+                      <h3 class="text-xl font-medium text-gray-900 mb-2">
+                        Real-time Mapping
+                      </h3>
+                      <p class="text-gray-600">
+                        Interactive, detailed flood risk maps updated in
+                        real-time with the latest data
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Feature 2 -->
+                  <div
+                    class="bg-white rounded-xl shadow-sm overflow-hidden card-hover"
+                  >
+                    <div class="h-2 bg-blue-500"></div>
+                    <div class="p-6">
+                      <div
+                        class="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mb-4"
+                      >
+                        <i class="fas fa-bell text-blue-500 text-xl"></i>
+                      </div>
+                      <h3 class="text-xl font-medium text-gray-900 mb-2">
+                        Early Warnings
+                      </h3>
+                      <p class="text-gray-600">
+                        Receive timely alerts and notifications about developing
+                        flood situations
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Feature 3 -->
+                  <div
+                    class="bg-white rounded-xl shadow-sm overflow-hidden card-hover"
+                  >
+                    <div class="h-2 bg-green-500"></div>
+                    <div class="p-6">
+                      <div
+                        class="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mb-4"
+                      >
+                        <i class="fas fa-shield-alt text-green-500 text-xl"></i>
+                      </div>
+                      <h3 class="text-xl font-medium text-gray-900 mb-2">
+                        Safety Resources
+                      </h3>
+                      <p class="text-gray-600">
+                        Access to critical safety information, evacuation
+                        routes, and preparation guides
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Feature 4 -->
+                  <div
+                    class="bg-white rounded-xl shadow-sm overflow-hidden card-hover"
+                  >
+                    <div class="h-2 bg-amber-500"></div>
+                    <div class="p-6">
+                      <div
+                        class="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mb-4"
+                      >
+                        <i class="fas fa-users text-amber-500 text-xl"></i>
+                      </div>
+                      <h3 class="text-xl font-medium text-gray-900 mb-2">
+                        Community Network
+                      </h3>
+                      <p class="text-gray-600">
+                        Connect with local communities for support and real-time
+                        updates during emergencies
                       </p>
                     </div>
                   </div>
@@ -373,104 +903,240 @@
     <!-- Flood Map Section -->
     <section id="flood-map" class="section py-10 bg-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-8">
+        <div class="text-center mb-6">
           <h2 class="text-3xl font-display font-bold text-gray-900">
-            Interactive Flood Map
+            Advanced Flood Risk Visualization
           </h2>
           <p class="mt-2 text-lg text-gray-600 max-w-2xl mx-auto">
-            Explore potential flood risk areas with our interactive heatmap
-            visualization
+            Explore detailed flood risk data with our interactive map and
+            analytics tools
           </p>
+        </div>
+
+        <!-- Alert box for high risk locations -->
+        <div
+          id="flood-alert"
+          class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg hidden"
+        >
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-red-800">
+                High Flood Risk Alert
+              </h3>
+              <div class="mt-2 text-sm text-red-700">
+                <p id="alert-message">
+                  This location is currently experiencing high flood risk
+                  conditions. Please monitor local emergency channels and be
+                  prepared to evacuate if necessary.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <!-- Main Map Column -->
           <div class="lg:col-span-3">
             <!-- Map Controls -->
-            <div
-              class="bg-white rounded-lg shadow-custom p-3 mb-4 flex flex-wrap gap-3 items-center"
-            >
-              <div class="w-full sm:w-auto flex-grow">
-                <div class="relative">
-                  <input
-                    type="text"
-                    id="map-search-input"
-                    placeholder="Search location..."
-                    class="w-full pl-10 pr-12 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/50 focus:outline-none"
-                  />
-                  <div class="absolute left-3 top-2.5 text-gray-400">
-                    <i class="fas fa-search"></i>
+            <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+              <div class="flex flex-col sm:flex-row gap-4">
+                <div class="flex-grow">
+                  <div class="relative rounded-lg overflow-hidden">
+                    <input
+                      type="text"
+                      id="map-search-input"
+                      placeholder="Search location..."
+                      class="w-full pl-10 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                    />
+                    <div
+                      class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    >
+                      <i class="fas fa-search"></i>
+                    </div>
                   </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 items-center">
                   <button
                     id="map-search-btn"
-                    class="absolute right-2 top-1.5 bg-primary text-white p-1.5 rounded-md hover:bg-primary/90 transition-colors"
+                    class="flex-shrink-0 bg-primary hover:bg-primary-700 text-white px-4 py-2.5 rounded-lg transition-colors"
                   >
-                    <i class="fas fa-arrow-right"></i>
+                    <i class="fas fa-map-marker-alt mr-2"></i> Search
+                  </button>
+
+                  <select
+                    id="map-timeframe"
+                    class="bg-gray-50 border border-gray-200 text-sm rounded-lg px-3 py-2.5 focus:ring-primary-500 focus:border-primary"
+                  >
+                    <option value="current">Current</option>
+                    <option value="24h">Last 24h</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                  </select>
+
+                  <select
+                    id="map-display-mode"
+                    class="bg-gray-50 border border-gray-200 text-sm rounded-lg px-3 py-2.5 focus:ring-primary-500 focus:border-primary"
+                  >
+                    <option value="risk">Risk Heatmap</option>
+                    <option value="rainfall">Rainfall</option>
+                    <option value="historical">Historical Events</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Additional info banner -->
+              <div
+                class="flex items-center mt-3 bg-blue-50 p-2 rounded-lg text-xs text-blue-700"
+              >
+                <i class="fas fa-info-circle mr-2"></i>
+                <span id="map-info-text"
+                  >Search for a location or use your current location to see
+                  detailed flood risk data</span
+                >
+              </div>
+            </div>
+
+            <!-- Map Container with Animation -->
+            <div
+              class="relative overflow-hidden rounded-xl shadow-sm border border-gray-100"
+            >
+              <div
+                class="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent z-0"
+              ></div>
+
+              <div
+                id="flood-map-view"
+                class="relative z-10 w-full h-[600px] overflow-hidden"
+              >
+                <!-- Map Loading Indicator -->
+                <div
+                  id="map-loading"
+                  class="absolute inset-0 bg-white bg-opacity-80 z-20 hidden items-center justify-center"
+                >
+                  <div class="text-center">
+                    <div
+                      class="w-12 h-12 border-t-4 border-b-4 border-primary rounded-full animate-spin mx-auto"
+                    ></div>
+                    <p class="mt-3 text-primary font-medium">
+                      Loading map data...
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Map Controls Overlay -->
+              <div class="absolute top-4 right-4 z-20 flex flex-col gap-2">
+                <!-- Layer controls -->
+                <div
+                  class="bg-white/90 backdrop-blur-sm shadow-sm rounded-lg p-2"
+                >
+                  <div class="text-xs font-medium text-gray-500 mb-2 px-1">
+                    Map Layers
+                  </div>
+                  <div class="flex flex-col gap-1.5">
+                    <button
+                      data-layer="terrain"
+                      class="map-layer-toggle py-1.5 px-3 text-xs bg-primary text-white rounded-lg transition-colors flex items-center"
+                    >
+                      <i class="fas fa-mountain mr-1.5"></i> Terrain
+                    </button>
+                    <button
+                      data-layer="satellite"
+                      class="map-layer-toggle py-1.5 px-3 text-xs bg-white text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center"
+                    >
+                      <i class="fas fa-satellite mr-1.5"></i> Satellite
+                    </button>
+                    <button
+                      data-layer="elevation"
+                      class="map-layer-toggle py-1.5 px-3 text-xs bg-white text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center"
+                    >
+                      <i class="fas fa-layer-group mr-1.5"></i> Elevation
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Zoom controls -->
+                <div
+                  class="bg-white/90 backdrop-blur-sm shadow-sm rounded-lg overflow-hidden"
+                >
+                  <button
+                    id="zoom-in"
+                    class="w-8 h-8 flex items-center justify-center text-gray-700 hover:bg-gray-100 border-b border-gray-200"
+                  >
+                    <i class="fas fa-plus"></i>
+                  </button>
+                  <button
+                    id="zoom-out"
+                    class="w-8 h-8 flex items-center justify-center text-gray-700 hover:bg-gray-100"
+                  >
+                    <i class="fas fa-minus"></i>
                   </button>
                 </div>
               </div>
-
-              <div class="flex flex-wrap gap-2">
-                <select
-                  id="map-timeframe"
-                  class="bg-white border border-gray-200 text-sm rounded-lg px-3 py-2.5 focus:ring-primary/50 focus:border-primary"
-                >
-                  <option value="current">Current</option>
-                  <option value="24h">Last 24h</option>
-                  <option value="7d">Last 7 days</option>
-                </select>
-
-                <select
-                  id="map-display-mode"
-                  class="bg-white border border-gray-200 text-sm rounded-lg px-3 py-2.5 focus:ring-primary/50 focus:border-primary"
-                >
-                  <option value="risk">Risk Heatmap</option>
-                  <option value="rainfall">Rainfall</option>
-                </select>
-              </div>
             </div>
 
-            <!-- Map Container -->
-            <div
-              id="flood-map-view"
-              class="w-full h-[600px] rounded-xl shadow-custom overflow-hidden border border-gray-100 relative"
-            >
-              <!-- Map Loading Indicator -->
+            <!-- Data Visualizations -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <!-- Rainfall Trend Chart -->
               <div
-                id="map-loading"
-                class="absolute inset-0 bg-white bg-opacity-80 z-20 hidden flex items-center justify-center"
+                class="bg-white rounded-xl shadow-sm p-4 border border-gray-100"
               >
-                <div class="text-center">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">
+                  Rainfall Trend
+                </h3>
+                <div class="h-48" id="rainfall-chart">
                   <div
-                    class="w-12 h-12 border-t-4 border-b-4 border-primary rounded-full animate-spin mx-auto"
-                  ></div>
-                  <p class="mt-3 text-primary font-medium">
-                    Loading map data...
-                  </p>
+                    class="flex items-center justify-center h-full text-gray-400"
+                  >
+                    <div class="text-center">
+                      <i class="fas fa-chart-line text-2xl mb-2"></i>
+                      <p class="text-xs">Select a location to view data</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Map Layer Toggles -->
-            <div class="flex flex-wrap gap-2 mt-4">
-              <button
-                data-layer="terrain"
-                class="map-layer-toggle py-1.5 px-3 text-sm bg-primary text-white rounded-lg active"
+              <!-- Historical Flood Events -->
+              <div
+                class="bg-white rounded-xl shadow-sm p-4 border border-gray-100"
               >
-                <i class="fas fa-mountain mr-1"></i> Terrain
-              </button>
-              <button
-                data-layer="satellite"
-                class="map-layer-toggle py-1.5 px-3 text-sm bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50"
+                <h3 class="text-sm font-medium text-gray-700 mb-2">
+                  Historical Events
+                </h3>
+                <div class="h-48" id="historical-events">
+                  <div
+                    class="flex items-center justify-center h-full text-gray-400"
+                  >
+                    <div class="text-center">
+                      <i class="fas fa-history text-2xl mb-2"></i>
+                      <p class="text-xs">Select a location to view data</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Risk Distribution -->
+              <div
+                class="bg-white rounded-xl shadow-sm p-4 border border-gray-100"
               >
-                <i class="fas fa-satellite mr-1"></i> Satellite
-              </button>
-              <button
-                data-layer="elevation"
-                class="map-layer-toggle py-1.5 px-3 text-sm bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50"
-              >
-                <i class="fas fa-layer-group mr-1"></i> Elevation
-              </button>
+                <h3 class="text-sm font-medium text-gray-700 mb-2">
+                  Risk Distribution
+                </h3>
+                <div class="h-48" id="risk-distribution">
+                  <div
+                    class="flex items-center justify-center h-full text-gray-400"
+                  >
+                    <div class="text-center">
+                      <i class="fas fa-chart-pie text-2xl mb-2"></i>
+                      <p class="text-xs">Select a location to view data</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -478,7 +1144,7 @@
           <div class="lg:col-span-1">
             <!-- Risk Legend -->
             <div
-              class="bg-white rounded-lg shadow-custom p-4 mb-4 border border-gray-100"
+              class="bg-white rounded-xl shadow-sm p-4 mb-4 border border-gray-100"
             >
               <h3 class="font-medium text-gray-900 mb-3 flex items-center">
                 <i class="fas fa-info-circle text-primary mr-2"></i> Risk Legend
@@ -512,7 +1178,7 @@
             <!-- Current Conditions -->
             <div
               id="current-conditions"
-              class="bg-white rounded-lg shadow-custom p-4 mb-4 border border-gray-100"
+              class="bg-white rounded-xl shadow-sm p-4 mb-4 border border-gray-100"
             >
               <h3 class="font-medium text-gray-900 mb-3 flex items-center">
                 <i class="fas fa-cloud-sun text-primary mr-2"></i> Current
@@ -530,9 +1196,9 @@
 
             <!-- Forecast Panel -->
             <div
-              class="bg-white rounded-lg shadow-custom border border-gray-100 overflow-hidden"
+              class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
             >
-              <div class="bg-primary text-white px-4 py-2 text-center">
+              <div class="bg-primary text-white px-4 py-2">
                 <h3 class="font-medium text-sm">5-Day Forecast</h3>
               </div>
               <div id="forecast-panel" class="p-4">
@@ -544,6 +1210,27 @@
                   </div>
                   <p>Select a location to view forecast</p>
                 </div>
+              </div>
+            </div>
+
+            <!-- Nearby Monitoring Stations -->
+            <div
+              class="bg-white rounded-xl shadow-sm p-4 mt-4 border border-gray-100"
+            >
+              <h3 class="font-medium text-gray-900 mb-3 flex items-center">
+                <i class="fas fa-broadcast-tower text-primary mr-2"></i>
+                Monitoring Stations
+              </h3>
+              <div
+                id="monitoring-stations"
+                class="text-center py-6 text-gray-500"
+              >
+                <div
+                  class="w-12 h-12 mx-auto mb-2 flex items-center justify-center rounded-full bg-gray-50"
+                >
+                  <i class="fas fa-satellite-dish text-lg text-gray-400"></i>
+                </div>
+                <p>Select a location to view nearby stations</p>
               </div>
             </div>
           </div>
@@ -678,6 +1365,164 @@
                 >
               </li>
             </ul>
+          </div>
+        </div>
+
+        <!-- AI Safety Assistant CTA -->
+        <div
+          class="mt-12 bg-primary-50 rounded-xl shadow-sm p-8 border border-primary-100"
+        >
+          <div class="flex flex-col md:flex-row items-center justify-between">
+            <div class="mb-6 md:mb-0 md:mr-6">
+              <h3 class="text-2xl font-semibold text-gray-900 mb-2">
+                Have Flood Safety Questions?
+              </h3>
+              <p class="text-gray-600 max-w-xl">
+                Our AI Safety Assistant can provide personalized guidance for
+                your situation, help you find emergency contacts, and give
+                real-time advice during flood emergencies.
+              </p>
+            </div>
+            <a
+              href="/safety"
+              class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 flex items-center"
+            >
+              <i class="fas fa-robot mr-2"></i>
+              Chat with Safety Assistant
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Safety Section -->
+    <section id="safety" class="py-16 bg-white">
+      <div class="container mx-auto px-4">
+        <div class="max-w-7xl mx-auto text-center mb-12">
+          <h2
+            class="text-3xl md:text-4xl font-display font-bold text-gray-900 mb-4"
+          >
+            Flood Safety Resources
+          </h2>
+          <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+            Access critical safety information, emergency contacts, and
+            AI-powered assistance to keep you and your family safe during flood
+            events.
+          </p>
+        </div>
+
+        <div class="flex flex-col items-center mt-8">
+          <div
+            class="bg-primary-50 rounded-xl p-6 max-w-4xl w-full shadow-sm mb-8"
+          >
+            <div
+              class="flex flex-col md:flex-row items-center text-center md:text-left"
+            >
+              <div class="mb-6 md:mb-0 md:mr-8">
+                <div
+                  class="bg-primary-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto md:mx-0"
+                >
+                  <i class="fas fa-robot text-primary-600 text-4xl"></i>
+                </div>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-xl font-display font-bold text-gray-900 mb-2">
+                  AI Safety Assistant
+                </h3>
+                <p class="text-gray-600 mb-4">
+                  Our AI assistant is available 24/7 to answer your flood safety
+                  questions, provide guidance during emergencies, and help you
+                  create safety plans tailored to your situation.
+                </p>
+                <a
+                  href="/safety"
+                  class="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-full shadow-sm hover:bg-primary-700 transition"
+                >
+                  <i class="fas fa-comment-dots mr-2"></i>
+                  Chat with Safety Assistant
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl w-full">
+            <div
+              class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 card-hover"
+            >
+              <div class="p-6">
+                <div
+                  class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4"
+                >
+                  <i class="fas fa-phone-alt text-red-600"></i>
+                </div>
+                <h3 class="text-lg font-display font-bold text-gray-900 mb-2">
+                  Emergency Contacts
+                </h3>
+                <p class="text-gray-600 mb-4">
+                  Quick access to emergency services, flood hotlines, and local
+                  rescue teams.
+                </p>
+                <a
+                  href="/safety"
+                  class="text-primary-600 hover:text-primary-800 font-medium inline-flex items-center"
+                >
+                  View Contacts
+                  <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                </a>
+              </div>
+            </div>
+
+            <div
+              class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 card-hover"
+            >
+              <div class="p-6">
+                <div
+                  class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mb-4"
+                >
+                  <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+                </div>
+                <h3 class="text-lg font-display font-bold text-gray-900 mb-2">
+                  Safety Guides
+                </h3>
+                <p class="text-gray-600 mb-4">
+                  Step-by-step guides for before, during, and after flood
+                  emergencies.
+                </p>
+                <a
+                  href="/safety"
+                  class="text-primary-600 hover:text-primary-800 font-medium inline-flex items-center"
+                >
+                  View Guides
+                  <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                </a>
+              </div>
+            </div>
+
+            <div
+              class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 card-hover"
+            >
+              <div class="p-6">
+                <div
+                  class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4"
+                >
+                  <i class="fas fa-map-marked-alt text-green-600"></i>
+                </div>
+                <h3 class="text-lg font-display font-bold text-gray-900 mb-2">
+                  Evacuation Routes
+                </h3>
+                <p class="text-gray-600 mb-4">
+                  Find nearby shelters and safe evacuation routes from your
+                  location.
+                </p>
+                <a
+                  href="/safety"
+                  class="text-primary-600 hover:text-primary-800 font-medium inline-flex items-center"
+                >
+                  Find Routes
+                  <i class="fas fa-arrow-right ml-2 text-sm"></i>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
